@@ -2,7 +2,9 @@
   "name": "tlox",
   "dependencies": {
     "@types/node": "^16.7.12",
-    "typescript": "^4.4.3"
+    "oclif": "^1.18.1",
+    "typescript": "^4.4.3",
+    "yargs": "^17.2.0"
   },
   "devDependencies": {
     "@types/jest": "^27.0.1",
@@ -21,22 +23,24 @@
     "prettier": "^2.2.1",
     "ts-jest": "^27.0.5"
   },
-  "private": true,
   "engines": {
     "node": "14.16",
     "npm": "6.14",
     "yarn": "1.22"
   },
-  "scripts": {
-    "nuke": "rm -rf node_modules && yarn clean && yarn install",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "test": "jest",
-    "test-dev": "jest --watch-all --coverage --verbose",
-    "build": "yarn clean && yarn tsc"
-  },
   "prettier": {
     "printWidth": 100,
     "semi": false,
     "trailingComma": "all"
+  },
+  "private": true,
+  "scripts": {
+    "build": "yarn clean && yarn tsc",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "nuke": "rm -rf node_modules && yarn clean && yarn install",
+    "test": "jest",
+    "test-dev": "jest --watch-all --coverage --verbose",
+    "dev": "yarn tsc && nodemon -L ./dist/cli.js -- ",
+    "tlox": "yarn tsc && node ./dist/cli.js"
   }
 }
