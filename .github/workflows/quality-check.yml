@@ -1,0 +1,27 @@
+name: quality-check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14.16"
+      - name: Install dependencies
+        run: yarn install
+      - name: Build project
+        run: yarn build
+      - name: Show /dist tree
+        run: tree -hC --dirsfirst dist/
+      - name: Assert no test files in dist/
+        run: "! find dist/ -iname '*.test.*' | grep '.'"
+      - name: Run tests
+        run: yarn test --coverage

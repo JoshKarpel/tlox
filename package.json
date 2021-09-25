@@ -1,0 +1,42 @@
+{
+  "name": "tlox",
+  "dependencies": {
+    "@types/node": "^16.7.12",
+    "typescript": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^27.0.1",
+    "@typescript-eslint/eslint-plugin": "^4.31.0",
+    "@typescript-eslint/parser": "^4.31.0",
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.1.0",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-simple-import-sort": "^7.0.0",
+    "jest": "^27.1.0",
+    "nodemon": "^2.0.7",
+    "prettier": "^2.2.1",
+    "ts-jest": "^27.0.5"
+  },
+  "private": true,
+  "engines": {
+    "node": "14.16",
+    "npm": "6.14",
+    "yarn": "1.22"
+  },
+  "scripts": {
+    "nuke": "rm -rf node_modules && yarn clean && yarn install",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "jest",
+    "test-dev": "jest --watch-all --coverage --verbose",
+    "build": "yarn clean && yarn tsc"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "semi": false,
+    "trailingComma": "all"
+  }
+}
