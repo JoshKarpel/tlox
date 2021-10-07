@@ -71,7 +71,7 @@ export interface Token {
   readonly line: number
 }
 
-export class Scanner {
+class Scanner {
   source: string
   tokens: Array<Token>
 
@@ -142,10 +142,10 @@ export class Scanner {
         this.addToken(this.match("=") ? "EQUAL_EQUAL" : "EQUAL")
         break
       case "<":
-        this.addToken(this.match("=") ? "LESS_EQUAL" : "EQUAL")
+        this.addToken(this.match("=") ? "LESS_EQUAL" : "LESS")
         break
       case ">":
-        this.addToken(this.match("=") ? "GREATER_EQUAL" : "EQUAL")
+        this.addToken(this.match("=") ? "GREATER_EQUAL" : "GREATER")
         break
       case "/":
         if (this.match("/")) {
@@ -282,4 +282,9 @@ export class SyntaxError extends Error {
     this.line = line
     this.message = message
   }
+}
+
+export function scan(source: string): Array<Token> {
+  const scanner = new Scanner(source)
+  return scanner.scanTokens()
 }
