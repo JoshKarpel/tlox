@@ -4,6 +4,7 @@ import yargs from "yargs"
 import { hideBin } from "yargs/helpers"
 
 yargs(hideBin(process.argv))
+  .strict(true)
   .scriptName("tlox")
   .command(
     ["run <path>", "$0"],
@@ -19,4 +20,5 @@ yargs(hideBin(process.argv))
       console.log(`Path: ${argv.path}`)
     },
   )
+  .recommendCommands()
   .parse()
