@@ -6,11 +6,4 @@ describe("cli", () => {
       expect(err).toBeFalsy()
     })
   })
-
-  test("default command is run", () => {
-    cli.parse("foo", {}, (err, argv, _output) => {
-      expect(err).toBeFalsy()
-      expect(argv.path).toEqual("foo")
-    })
-  })
 })
