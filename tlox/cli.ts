@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
 import yargs from "yargs"
-import { hideBin } from "yargs/helpers"
 
-yargs(hideBin(process.argv))
+export const cli = yargs
   .strict(true)
   .scriptName("tlox")
   .command(
@@ -21,4 +20,3 @@ yargs(hideBin(process.argv))
     },
   )
   .recommendCommands()
-  .parse()

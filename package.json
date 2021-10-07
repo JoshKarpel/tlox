@@ -40,7 +40,7 @@
     "nuke": "rm -rf node_modules && yarn clean && yarn install",
     "test": "jest",
     "test-dev": "jest --watch-all --coverage --verbose",
-    "dev": "yarn tsc && nodemon -L ./dist/cli.js -- ",
-    "tlox": "yarn tsc && node ./dist/cli.js"
+    "dev": "yarn tsc && nodemon -L ./dist/tlox.js -- ",
+    "tlox": "yarn tsc && node ./dist/tlox.js"
   }
 }
