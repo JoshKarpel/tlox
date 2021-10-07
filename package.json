@@ -2,6 +2,7 @@
   "name": "tlox",
   "dependencies": {
     "@types/node": "^16.7.12",
+    "chalk": "^4.1.2",
     "oclif": "^1.18.1",
     "typescript": "^4.4.3",
     "yargs": "^17.2.0"
@@ -10,6 +11,7 @@
     "@types/jest": "^27.0.1",
     "@typescript-eslint/eslint-plugin": "^4.31.0",
     "@typescript-eslint/parser": "^4.31.0",
+    "concurrently": "^6.3.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-config-standard": "^16.0.2",
@@ -40,7 +42,9 @@
     "nuke": "rm -rf node_modules && yarn clean && yarn install",
     "test": "jest",
     "test-dev": "jest --watch-all --coverage --verbose",
-    "dev": "yarn tsc && nodemon -L ./dist/tlox.js -- ",
-    "tlox": "yarn tsc && node ./dist/tlox.js"
+    "tsc-dev": "tsc --watch --preserveWatchOutput",
+    "tlox-dev": "nodemon -L ./dist/tlox.js --",
+    "tlox": "yarn tsc && node ./dist/tlox.js",
+    "dev": "concurrently --kill-others --names \"TSC,LOX\" --prefix \"{time} [{name}] \" --prefix-colors=\"magenta,blue\" \"yarn tsc-dev\" \"yarn tlox-dev\""
   }
 }
