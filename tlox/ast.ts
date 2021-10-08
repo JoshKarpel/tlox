@@ -39,7 +39,7 @@ export class Grouping implements Expr {
   }
 }
 
-export type LiteralValue = string | number | boolean | undefined | null
+export type LiteralValue = string | number | boolean | null
 
 export class Literal implements Expr {
   value: LiteralValue

@@ -1,7 +1,7 @@
 import chalk from "chalk"
 
 import { Binary, Expr, Grouping, Literal, Unary } from "./ast"
-import { Token, TokenType } from "./scanner"
+import { isLiteralToken, Token, TokenType } from "./scanner"
 
 export function parse(tokens: Array<Token>): Expr {
   const parser = new Parser(tokens)
@@ -100,7 +100,12 @@ export class Parser {
     } else if (this.match("NIL")) {
       return new Literal(null)
     } else if (this.match("NUMBER", "STRING")) {
-      return new Literal(this.previous().value)
+      const t = this.previous()
+      if (isLiteralToken(t)) {
+        return new Literal(t.value)
+      } else {
+        throw this.error(t, "Expected a number or string.")
+      }
     } else if (this.match("LEFT_PAREN")) {
       const expr = this.expression()
       this.consume("RIGHT_PAREN", "Expected ')' after expression")
