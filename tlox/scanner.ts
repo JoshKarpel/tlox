@@ -1,8 +1,9 @@
+import { LiteralValue } from "./ast"
 import { Logger } from "./logger"
 
 const logger = Logger.context({ module: "scanner" })
 
-type TokenType =
+type SyntacticTokenType =
   | "LEFT_PAREN"
   | "RIGHT_PAREN"
   | "LEFT_BRACE"
@@ -22,28 +23,25 @@ type TokenType =
   | "GREATER_EQUAL"
   | "LESS"
   | "LESS_EQUAL"
-  // literals
   | "IDENTIFIER"
-  | "STRING"
-  | "NUMBER"
-  // keywords
   | "AND"
   | "CLASS"
   | "ELSE"
-  | "FALSE"
   | "FUN"
   | "FOR"
   | "IF"
-  | "NIL"
   | "OR"
   | "PRINT"
   | "RETURN"
   | "SUPER"
   | "THIS"
-  | "TRUE"
   | "VAR"
   | "WHILE"
   | "EOF"
+
+type LiteralTokenType = "STRING" | "NUMBER" | "TRUE" | "FALSE" | "NIL"
+
+export type TokenType = SyntacticTokenType | LiteralTokenType
 
 const KEYWORDS: Record<string, TokenType> = {
   and: "AND",
@@ -67,8 +65,16 @@ const KEYWORDS: Record<string, TokenType> = {
 export interface Token {
   readonly type: TokenType
   readonly lexeme: string
-  readonly literal: unknown
   readonly line: number
+}
+
+export interface LiteralToken extends Token {
+  readonly type: LiteralTokenType
+  readonly value: LiteralValue
+}
+
+export function isLiteralToken(token: Token | LiteralToken): token is LiteralToken {
+  return "value" in token
 }
 
 class Scanner {
@@ -93,6 +99,9 @@ class Scanner {
       this.start = this.current
       this.scanToken()
     }
+
+    this.start = this.current
+    this.addToken("EOF")
 
     return this.tokens
   }
@@ -249,15 +258,25 @@ class Scanner {
     }
   }
 
-  addToken(type: TokenType, literal?: unknown): void {
-    const t: Token = {
-      type: type,
-      lexeme: this.source.slice(this.start, this.current),
-      literal: literal,
-      line: this.line,
+  addToken(type: TokenType, value?: LiteralValue): void {
+    if (value === undefined) {
+      const t = {
+        type: type,
+        lexeme: this.source.slice(this.start, this.current),
+        line: this.line,
+      }
+      logger.log({ token: t, current: this.current })
+      this.tokens.push(t)
+    } else {
+      const t = {
+        type: type,
+        lexeme: this.source.slice(this.start, this.current),
+        line: this.line,
+        value: value,
+      }
+      logger.log({ token: t, current: this.current })
+      this.tokens.push(t)
     }
-    logger.log({ token: t, current: this.current })
-    this.tokens.push(t)
   }
 }
 
@@ -279,6 +298,7 @@ export class SyntaxError extends Error {
 
   constructor({ line, message }: { line: number; message: string }) {
     super()
+
     this.line = line
     this.message = message
   }
