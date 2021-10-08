@@ -41,10 +41,9 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "nuke": "rm -rf node_modules && yarn clean && yarn install",
     "test": "jest",
-    "test-dev": "jest --watch-all --coverage --verbose",
+    "test-dev": "jest --watch-all --coverage",
     "tsc-dev": "tsc --watch --preserveWatchOutput",
     "tlox-dev": "nodemon -L ./dist/tlox.js --",
-    "tlox": "yarn tsc && node ./dist/tlox.js",
-    "dev": "concurrently --kill-others --names \"TSC,LOX\" --prefix \"{time} [{name}] \" --prefix-colors=\"magenta,blue\" \"yarn tsc-dev\" \"yarn tlox-dev\""
+    "tlox": "yarn tsc && node ./dist/tlox.js"
   }
 }
