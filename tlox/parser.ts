@@ -83,7 +83,7 @@ export class Parser {
   }
 
   unary(): Expr {
-    if (this.match("BANG_EQUAL", "MINUS")) {
+    if (this.match("BANG", "MINUS")) {
       const operator = this.previous()
       const right = this.primary()
       return new Unary(operator, right)
