@@ -39,10 +39,12 @@ export class Grouping implements Expr {
   }
 }
 
-export class Literal implements Expr {
-  value: string | number | boolean
+export type LiteralValue = string | number | boolean | undefined | null
 
-  constructor(value: string | number | boolean) {
+export class Literal implements Expr {
+  value: LiteralValue
+
+  constructor(value: LiteralValue) {
     this.value = value
   }
 

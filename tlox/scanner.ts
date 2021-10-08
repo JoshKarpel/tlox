@@ -1,8 +1,9 @@
+import { LiteralValue } from "./ast"
 import { Logger } from "./logger"
 
 const logger = Logger.context({ module: "scanner" })
 
-type TokenType =
+export type TokenType =
   | "LEFT_PAREN"
   | "RIGHT_PAREN"
   | "LEFT_BRACE"
@@ -67,7 +68,7 @@ const KEYWORDS: Record<string, TokenType> = {
 export interface Token {
   readonly type: TokenType
   readonly lexeme: string
-  readonly literal: unknown
+  readonly value: LiteralValue
   readonly line: number
 }
 
@@ -93,6 +94,9 @@ class Scanner {
       this.start = this.current
       this.scanToken()
     }
+
+    this.start = this.current
+    this.addToken("EOF")
 
     return this.tokens
   }
@@ -249,11 +253,11 @@ class Scanner {
     }
   }
 
-  addToken(type: TokenType, literal?: unknown): void {
+  addToken(type: TokenType, literal?: string | number | boolean | undefined): void {
     const t: Token = {
       type: type,
       lexeme: this.source.slice(this.start, this.current),
-      literal: literal,
+      value: literal,
       line: this.line,
     }
     logger.log({ token: t, current: this.current })
@@ -279,6 +283,7 @@ export class SyntaxError extends Error {
 
   constructor({ line, message }: { line: number; message: string }) {
     super()
+
     this.line = line
     this.message = message
   }

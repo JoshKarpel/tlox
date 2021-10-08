@@ -6,7 +6,7 @@ export class AstPrinter implements Visitor<string> {
   }
 
   parenthesize(name: string, ...exprs: Array<Expr>): string {
-    return `(${name} ${exprs.map((e) => e.accept(this)).join(" ")})`
+    return `(${name} ${exprs.map((e) => e.accept(this)).join(` `)})`
   }
 
   visitBinary(expr: Binary): string {
@@ -18,7 +18,7 @@ export class AstPrinter implements Visitor<string> {
   }
 
   visitLiteral(expr: Literal): string {
-    return expr.value === null ? "nil" : expr.value.toString()
+    return expr.value?.toString() ?? "nil"
   }
 
   visitUnary(expr: Unary): string {
