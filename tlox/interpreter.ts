@@ -1,0 +1,132 @@
+import { isDeepStrictEqual } from "util"
+
+import { Binary, Expr, Grouping, Literal, LiteralValue, Unary, Visitor } from "./ast"
+import { Logger } from "./logger"
+import { salmon } from "./pretty"
+import { Token } from "./scanner"
+
+const logger = Logger.context({ module: "interpreter" })
+
+type LoxObject = LiteralValue
+
+export class LoxRuntimeError extends Error {
+  token: Token
+  message: string
+
+  constructor({ token, message }: { token: Token; message: string }) {
+    super()
+
+    this.token = token
+    this.message = message
+  }
+}
+
+function isTruthy(object: LoxObject): boolean {
+  if (object === null) {
+    return false
+  } else if (typeof object == "boolean") {
+    return object
+  } else {
+    return true
+  }
+}
+
+function mustBeNumber(token: Token, n: LoxObject): asserts n is number {
+  if (typeof n !== "number") {
+    throw new LoxRuntimeError({
+      token: token,
+      message: `Expected ${n} to be a number, but it was a ${typeof n}`,
+    })
+  }
+}
+
+function isEqual(left: LoxObject, right: LoxObject) {
+  return isDeepStrictEqual(left, right)
+}
+
+export class Interpreter implements Visitor<LoxObject> {
+  visit(expr: Expr): LoxObject {
+    const obj = expr.accept(this)
+    logger.log({ expr: expr, value: obj })
+    return obj
+  }
+
+  visitBinary(expr: Binary): LoxObject {
+    const left = this.visit(expr.left)
+    const right = this.visit(expr.right)
+
+    switch (expr.operator.type) {
+      case "PLUS":
+        if (typeof left === "number" && typeof right === "number") {
+          return left + right
+        } else if (typeof left === "string" && typeof right === "string") {
+          return left + right
+        } else {
+          throw new LoxRuntimeError({
+            token: expr.operator,
+            message: `Can only add strings to strings and numbers to numbers, not ${salmon(
+              left,
+            )} (${salmon(typeof left)}) to ${salmon(right)} (${salmon(typeof right)})`,
+          })
+        }
+      case "MINUS":
+        mustBeNumber(expr.operator, left)
+        mustBeNumber(expr.operator, right)
+        return left - right
+      case "SLASH":
+        mustBeNumber(expr.operator, left)
+        mustBeNumber(expr.operator, right)
+        return left / right
+      case "STAR":
+        mustBeNumber(expr.operator, left)
+        mustBeNumber(expr.operator, right)
+        return left * right
+      case "GREATER":
+        mustBeNumber(expr.operator, left)
+        mustBeNumber(expr.operator, right)
+        return left > right
+      case "GREATER_EQUAL":
+        mustBeNumber(expr.operator, left)
+        mustBeNumber(expr.operator, right)
+        return left >= right
+      case "LESS":
+        mustBeNumber(expr.operator, left)
+        mustBeNumber(expr.operator, right)
+        return left < right
+      case "LESS_EQUAL":
+        mustBeNumber(expr.operator, left)
+        mustBeNumber(expr.operator, right)
+        return left <= right
+      case "EQUAL_EQUAL":
+        return isEqual(left, right)
+      case "BANG_EQUAL":
+        return !isEqual(left, right)
+      default:
+        throw new LoxRuntimeError({ token: expr.operator, message: "unreachable" })
+    }
+  }
+
+  visitGrouping(expr: Grouping): LoxObject {
+    return this.visit(expr.expression)
+  }
+
+  visitLiteral(expr: Literal): LoxObject {
+    return expr.value
+  }
+
+  visitUnary(expr: Unary): LoxObject {
+    const right = this.visit(expr.right)
+    switch (expr.operator.type) {
+      case "MINUS":
+        mustBeNumber(expr.operator, right)
+        return -right
+      case "BANG":
+        return !isTruthy(right)
+      default:
+        throw new LoxRuntimeError({
+          token: expr.operator,
+          message: `cannot apply operator ${expr.operator.lexeme} as unary to ${right}`,
+        })
+    }
+  }
+}
