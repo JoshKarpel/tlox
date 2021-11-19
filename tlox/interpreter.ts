@@ -7,7 +7,7 @@ import { Token } from "./scanner"
 
 const logger = Logger.context({ module: "interpreter" })
 
-type LoxObject = LiteralValue
+export type LoxObject = LiteralValue
 
 export class LoxRuntimeError extends Error {
   token: Token
@@ -21,7 +21,7 @@ export class LoxRuntimeError extends Error {
   }
 }
 
-function isTruthy(object: LoxObject): boolean {
+export function isTruthy(object: LoxObject): boolean {
   if (object === null) {
     return false
   } else if (typeof object == "boolean") {
@@ -31,7 +31,7 @@ function isTruthy(object: LoxObject): boolean {
   }
 }
 
-function mustBeNumber(token: Token, n: LoxObject): asserts n is number {
+export function mustBeNumber(token: Token, n: LoxObject): asserts n is number {
   if (typeof n !== "number") {
     throw new LoxRuntimeError({
       token: token,
@@ -40,7 +40,7 @@ function mustBeNumber(token: Token, n: LoxObject): asserts n is number {
   }
 }
 
-function isEqual(left: LoxObject, right: LoxObject) {
+export function isEqual(left: LoxObject, right: LoxObject): boolean {
   return isDeepStrictEqual(left, right)
 }
 
