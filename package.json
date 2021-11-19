@@ -26,7 +26,7 @@
     "ts-jest": "^27.0.5"
   },
   "engines": {
-    "node": "14.16",
+    "node": "16.13",
     "npm": "6.14",
     "yarn": "1.22"
   },
@@ -43,7 +43,7 @@
     "test": "jest",
     "test-dev": "jest --watch-all --coverage",
     "tsc-dev": "tsc --watch --preserveWatchOutput",
-    "tlox-dev": "nodemon -L ./dist/tlox.js --",
+    "tlox-dev": "yarn tsc-dev & nodemon -L ./dist/tlox.js --",
     "tlox": "yarn tsc && node ./dist/tlox.js"
   }
 }

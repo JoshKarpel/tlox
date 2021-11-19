@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
-import chalk from "chalk"
 import { readFileSync } from "fs"
 import * as readline from "readline"
 import yargs from "yargs"
 
+import { Interpreter } from "./interpreter"
 import { Logger } from "./logger"
+import { salmon } from "./pretty"
 import { run } from "./run"
 
 const logger = Logger.context({ module: "cli" })
@@ -25,14 +26,18 @@ export const cli = yargs
     },
     (argv) => {
       logger.log({ subcommand: "run", argv: argv })
+
+      const interpreter = new Interpreter()
+
       if (argv.path !== undefined) {
-        run(readFileSync(argv.path).toString())
+        run(interpreter, readFileSync(argv.path).toString())
       } else {
+        console.log(salmon("Welcome to tlox!"))
         const rl = readline.createInterface({
           input: process.stdin,
           output: process.stdout,
           terminal: false,
-          prompt: chalk.bold.rgb(250, 128, 114)("> "),
+          prompt: "🍣 ",
         })
 
         rl.prompt()
@@ -40,7 +45,7 @@ export const cli = yargs
         rl.on("line", (line) => {
           logger.log({ input: line })
           try {
-            run(line)
+            run(interpreter, line)
           } catch (e: unknown) {}
           rl.prompt()
         })
