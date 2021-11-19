@@ -43,7 +43,7 @@
     "test": "jest",
     "test-dev": "jest --watch-all --coverage",
     "tsc-dev": "tsc --watch --preserveWatchOutput",
-    "tlox-dev": "yarn tsc && nodemon -L ./dist/tlox.js --",
+    "tlox-dev": "yarn tsc-dev & nodemon -L ./dist/tlox.js --",
     "tlox": "yarn tsc && node ./dist/tlox.js"
   }
 }
