@@ -32,11 +32,12 @@ export const cli = yargs
       if (argv.path !== undefined) {
         run(interpreter, readFileSync(argv.path).toString())
       } else {
+        console.log(salmon("Welcome to tlox!"))
         const rl = readline.createInterface({
           input: process.stdin,
           output: process.stdout,
           terminal: false,
-          prompt: salmon("> "),
+          prompt: "🍣 ",
         })
 
         rl.prompt()
