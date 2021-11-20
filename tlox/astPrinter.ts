@@ -66,6 +66,9 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
   }
 
   visitVarStmt(stmt: Var): string {
-    return this.parenthesize("var", stmt.initializer ?? new Literal("UNINITIALIZED"))
+    return this.parenthesize(
+      `var ${stmt.name.lexeme}`,
+      stmt.initializer ?? new Literal("UNINITIALIZED"),
+    )
   }
 }

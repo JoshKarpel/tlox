@@ -1,6 +1,5 @@
 import chalk from "chalk"
 
-import { AstPrinter } from "./astPrinter"
 import { Interpreter, LoxRuntimeError } from "./interpreter"
 import { Logger } from "./logger"
 import { parse } from "./parser"
@@ -14,9 +13,6 @@ export function run(interpreter: Interpreter, source: string): void {
   try {
     const tokens = scan(source)
     const ast = parse(tokens)
-
-    const printer = new AstPrinter()
-    printer.print(ast)
 
     interpreter.interpret(ast)
   } catch (e: unknown) {

@@ -16,6 +16,7 @@ import {
   Var,
   Variable,
 } from "./ast"
+import { AstPrinter } from "./astPrinter"
 import { Logger } from "./logger"
 import { salmon } from "./pretty"
 import { Token } from "./scanner"
@@ -89,7 +90,14 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
 
   interpret(statements: Array<Stmt>): void {
     for (const stmt of statements) {
+      const printer = new AstPrinter()
+      console.log(salmon(`Statement: ${printer.format([stmt])}`))
+
       this.execute(stmt)
+
+      console.log(
+        salmon(`Environment: ${JSON.stringify(Object.fromEntries(this.environment.values))}`),
+      )
     }
   }
 
