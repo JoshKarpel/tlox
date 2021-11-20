@@ -2,6 +2,7 @@ import chalk from "chalk"
 import { isDeepStrictEqual } from "util"
 
 import {
+  Assign,
   Binary,
   Expr,
   Expression,
@@ -71,6 +72,14 @@ class Environment {
     this.values.set(name, value)
   }
 
+  assign(name: Token, value: LoxObject): void {
+    if (this.values.has(name.lexeme)) {
+      this.values.set(name.lexeme, value)
+    } else {
+      throw new LoxRuntimeError({ token: name, message: `Undefined variable ${name.lexeme}` })
+    }
+  }
+
   lookup(name: Token): LoxObject {
     const v = this.values.get(name.lexeme)
     if (v !== undefined) {
@@ -110,6 +119,12 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
   execute(stmt: Stmt): void {
     logger.log({ stmt: stmt })
     stmt.accept(this)
+  }
+
+  visitAssign(expr: Assign): LoxObject {
+    const value = this.evaluate(expr.value)
+    this.environment.assign(expr.name, value)
+    return value
   }
 
   visitBinary(expr: Binary): LoxObject {

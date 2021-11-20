@@ -1,6 +1,7 @@
 import { Token } from "./scanner"
 
 export interface ExpressionVisitor<T> {
+  visitAssign(expr: Assign): T
   visitBinary(expr: Binary): T
   visitGrouping(expr: Grouping): T
   visitLiteral(expr: Literal): T
@@ -10,6 +11,20 @@ export interface ExpressionVisitor<T> {
 
 export interface Expr {
   accept<T>(visitor: ExpressionVisitor<T>): T
+}
+
+export class Assign implements Expr {
+  name: Token
+  value: Expr
+
+  constructor(name: Token, value: Expr) {
+    this.name = name
+    this.value = value
+  }
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitAssign(this)
+  }
 }
 
 export class Binary implements Expr {

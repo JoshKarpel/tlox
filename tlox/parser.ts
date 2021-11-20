@@ -1,6 +1,7 @@
 import chalk from "chalk"
 
 import {
+  Assign,
   Binary,
   Expr,
   Expression,
@@ -88,7 +89,25 @@ export class Parser {
   }
 
   expression(): Expr {
-    return this.equality()
+    return this.assignment()
+  }
+
+  assignment(): Expr {
+    const expr = this.equality()
+
+    if (this.match("EQUAL")) {
+      const equals = this.previous()
+      const value = this.expression()
+
+      if (expr instanceof Variable) {
+        const name = expr.name
+        return new Assign(name, value)
+      } else {
+        throw this.error(equals, `Invalid assignment target ${JSON.stringify(expr)}`)
+      }
+    } else {
+      return expr
+    }
   }
 
   equality(): Expr {

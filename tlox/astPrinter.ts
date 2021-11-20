@@ -1,4 +1,5 @@
 import {
+  Assign,
   Binary,
   Expr,
   Expression,
@@ -35,6 +36,10 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
 
   parenthesize(name: string, ...exprs: Array<Expr>): string {
     return `(${name} ${exprs.map((e) => e.accept(this)).join(` `)})`
+  }
+
+  visitAssign(expr: Assign): string {
+    return this.parenthesize(`assign ${expr.name.lexeme}`, expr.value)
   }
 
   visitBinary(expr: Binary): string {
