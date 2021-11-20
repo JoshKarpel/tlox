@@ -1,6 +1,17 @@
 import chalk from "chalk"
 
-import { Binary, Expr, Expression, Grouping, Literal, Print, Stmt, Unary } from "./ast"
+import {
+  Binary,
+  Expr,
+  Expression,
+  Grouping,
+  Literal,
+  Print,
+  Stmt,
+  Unary,
+  Var,
+  Variable,
+} from "./ast"
 import { isLiteralToken, Token, TokenType } from "./scanner"
 
 export function parse(tokens: Array<Token>): Array<Stmt> {
@@ -22,10 +33,38 @@ export class Parser {
     const statements = []
 
     while (!this.isAtEnd()) {
-      statements.push(this.statement())
+      const d = this.declaration()
+      if (d !== null) {
+        statements.push(d)
+      }
     }
 
     return statements
+  }
+
+  declaration(): Stmt | null {
+    try {
+      if (this.match("VAR")) {
+        return this.varDeclaration()
+      } else {
+        return this.statement()
+      }
+    } catch (e: unknown) {
+      if (e instanceof ParseError) {
+        this.synchronize()
+        return null
+      } else throw e
+    }
+  }
+
+  varDeclaration(): Stmt {
+    const name = this.consume("IDENTIFIER", "Expected variable name.")
+
+    const initializer = this.match("EQUAL") ? this.expression() : undefined
+
+    this.consume("SEMICOLON", "Expected semicolon after variable declaration.")
+
+    return new Var(name, initializer)
   }
 
   statement(): Stmt {
@@ -124,6 +163,8 @@ export class Parser {
       } else {
         throw this.error(t, "Expected a number or string.")
       }
+    } else if (this.match("IDENTIFIER")) {
+      return new Variable(this.previous())
     } else if (this.match("LEFT_PAREN")) {
       const expr = this.expression()
       this.consume("RIGHT_PAREN", "Expected ')' after expression")

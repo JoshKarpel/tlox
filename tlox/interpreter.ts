@@ -13,6 +13,8 @@ import {
   StatementVisitor,
   Stmt,
   Unary,
+  Var,
+  Variable,
 } from "./ast"
 import { Logger } from "./logger"
 import { salmon } from "./pretty"
@@ -57,7 +59,34 @@ export function isEqual(left: LoxObject, right: LoxObject): boolean {
   return isDeepStrictEqual(left, right)
 }
 
+class Environment {
+  values: Map<string, LoxObject>
+
+  constructor() {
+    this.values = new Map()
+  }
+
+  define(name: string, value: LoxObject): void {
+    this.values.set(name, value)
+  }
+
+  lookup(name: Token): LoxObject {
+    const v = this.values.get(name.lexeme)
+    if (v !== undefined) {
+      return v
+    } else {
+      throw new LoxRuntimeError({ token: name, message: `Undefined variable ${name.lexeme}` })
+    }
+  }
+}
+
 export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisitor<void> {
+  environment: Environment
+
+  constructor() {
+    this.environment = new Environment()
+  }
+
   interpret(statements: Array<Stmt>): void {
     for (const stmt of statements) {
       this.execute(stmt)
@@ -154,11 +183,22 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
     }
   }
 
+  visitVariable(expr: Variable): LoxObject {
+    return this.environment.lookup(expr.name)
+  }
+
   visitExpressionStmt(stmt: Expression): void {
     this.evaluate(stmt.expression)
   }
 
   visitPrintStmt(stmt: Print): void {
     console.log(chalk.white(this.evaluate(stmt.expression)))
+  }
+
+  visitVarStmt(stmt: Var): void {
+    this.environment.define(
+      stmt.name.lexeme,
+      stmt.initializer !== undefined ? this.evaluate(stmt.initializer) : null,
+    )
   }
 }

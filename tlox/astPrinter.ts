@@ -9,6 +9,8 @@ import {
   StatementVisitor,
   Stmt,
   Unary,
+  Var,
+  Variable,
 } from "./ast"
 import { salmon } from "./pretty"
 
@@ -51,11 +53,19 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
     return this.parenthesize(expr.operator.lexeme, expr.right)
   }
 
+  visitVariable(expr: Variable): string {
+    return expr.name.lexeme
+  }
+
   visitPrintStmt(stmt: Print): string {
     return this.parenthesize("print", stmt.expression)
   }
 
   visitExpressionStmt(stmt: Expression): string {
     return this.parenthesize("expr", stmt.expression)
+  }
+
+  visitVarStmt(stmt: Var): string {
+    return this.parenthesize("var", stmt.initializer ?? new Literal("UNINITIALIZED"))
   }
 }
