@@ -1,6 +1,18 @@
 import { isDeepStrictEqual } from "util"
 
-import { Binary, Expr, Grouping, Literal, LiteralValue, Unary, Visitor } from "./ast"
+import {
+  Binary,
+  Expr,
+  Expression,
+  ExpressionVisitor,
+  Grouping,
+  Literal,
+  LiteralValue,
+  Print,
+  StatementVisitor,
+  Stmt,
+  Unary,
+} from "./ast"
 import { Logger } from "./logger"
 import { salmon } from "./pretty"
 import { Token } from "./scanner"
@@ -44,16 +56,27 @@ export function isEqual(left: LoxObject, right: LoxObject): boolean {
   return isDeepStrictEqual(left, right)
 }
 
-export class Interpreter implements Visitor<LoxObject> {
-  visit(expr: Expr): LoxObject {
+export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisitor<void> {
+  interpret(statements: Array<Stmt>): void {
+    for (const stmt of statements) {
+      this.execute(stmt)
+    }
+  }
+
+  evaluate(expr: Expr): LoxObject {
     const obj = expr.accept(this)
     logger.log({ expr: expr, value: obj })
     return obj
   }
 
+  execute(stmt: Stmt): void {
+    logger.log({ stmt: stmt })
+    stmt.accept(this)
+  }
+
   visitBinary(expr: Binary): LoxObject {
-    const left = this.visit(expr.left)
-    const right = this.visit(expr.right)
+    const left = this.evaluate(expr.left)
+    const right = this.evaluate(expr.right)
 
     switch (expr.operator.type) {
       case "PLUS":
@@ -107,7 +130,7 @@ export class Interpreter implements Visitor<LoxObject> {
   }
 
   visitGrouping(expr: Grouping): LoxObject {
-    return this.visit(expr.expression)
+    return this.evaluate(expr.expression)
   }
 
   visitLiteral(expr: Literal): LoxObject {
@@ -115,7 +138,7 @@ export class Interpreter implements Visitor<LoxObject> {
   }
 
   visitUnary(expr: Unary): LoxObject {
-    const right = this.visit(expr.right)
+    const right = this.evaluate(expr.right)
     switch (expr.operator.type) {
       case "MINUS":
         mustBeNumber(expr.operator, right)
@@ -128,5 +151,13 @@ export class Interpreter implements Visitor<LoxObject> {
           message: `cannot apply operator ${expr.operator.lexeme} as unary to ${right}`,
         })
     }
+  }
+
+  visitExpressionStmt(stmt: Expression): void {
+    this.evaluate(stmt.expression)
+  }
+
+  visitPrintStmt(stmt: Print): void {
+    console.log(this.evaluate(stmt.expression))
   }
 }

@@ -106,7 +106,7 @@ describe("interpreter", () => {
   for (const [expr, value] of interpreterCases) {
     test(`${JSON.stringify(expr)} evaluates to ${value}`, () => {
       const interpreter = new Interpreter()
-      const evaluated = interpreter.visit(expr)
+      const evaluated = interpreter.evaluate(expr)
 
       expect(evaluated).toBeLoxEqual(value)
     })
@@ -126,7 +126,7 @@ describe("interpreter", () => {
     test(`Evaluating ${JSON.stringify(expr)} throws a runtime error`, () => {
       const interpreter = new Interpreter()
 
-      expect(() => interpreter.visit(expr)).toThrowError(LoxRuntimeError)
+      expect(() => interpreter.evaluate(expr)).toThrowError(LoxRuntimeError)
     })
   }
 })

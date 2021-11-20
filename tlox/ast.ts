@@ -1,6 +1,6 @@
 import { Token } from "./scanner"
 
-export interface Visitor<T> {
+export interface ExpressionVisitor<T> {
   visitBinary(expr: Binary): T
   visitGrouping(expr: Grouping): T
   visitLiteral(expr: Literal): T
@@ -8,7 +8,7 @@ export interface Visitor<T> {
 }
 
 export interface Expr {
-  accept<T>(visitor: Visitor<T>): T
+  accept<T>(visitor: ExpressionVisitor<T>): T
 }
 
 export class Binary implements Expr {
@@ -22,7 +22,7 @@ export class Binary implements Expr {
     this.right = right
   }
 
-  accept<T>(visitor: Visitor<T>): T {
+  accept<T>(visitor: ExpressionVisitor<T>): T {
     return visitor.visitBinary(this)
   }
 }
@@ -34,7 +34,7 @@ export class Grouping implements Expr {
     this.expression = expression
   }
 
-  accept<T>(visitor: Visitor<T>): T {
+  accept<T>(visitor: ExpressionVisitor<T>): T {
     return visitor.visitGrouping(this)
   }
 }
@@ -48,7 +48,7 @@ export class Literal implements Expr {
     this.value = value
   }
 
-  accept<T>(visitor: Visitor<T>): T {
+  accept<T>(visitor: ExpressionVisitor<T>): T {
     return visitor.visitLiteral(this)
   }
 }
@@ -62,7 +62,40 @@ export class Unary implements Expr {
     this.right = right
   }
 
-  accept<T>(visitor: Visitor<T>): T {
+  accept<T>(visitor: ExpressionVisitor<T>): T {
     return visitor.visitUnary(this)
+  }
+}
+
+export interface StatementVisitor<T> {
+  visitExpressionStmt(stmt: Expression): T
+  visitPrintStmt(stmt: Print): T
+}
+
+export interface Stmt {
+  accept<T>(visitor: StatementVisitor<T>): T
+}
+
+export class Expression implements Stmt {
+  expression: Expr
+
+  constructor(expr: Expr) {
+    this.expression = expr
+  }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitExpressionStmt(this)
+  }
+}
+
+export class Print implements Stmt {
+  expression: Expr
+
+  constructor(expr: Expr) {
+    this.expression = expr
+  }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitPrintStmt(this)
   }
 }

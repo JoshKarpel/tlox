@@ -1,9 +1,9 @@
 import chalk from "chalk"
 
-import { Binary, Expr, Grouping, Literal, Unary } from "./ast"
+import { Binary, Expr, Expression, Grouping, Literal, Print, Stmt, Unary } from "./ast"
 import { isLiteralToken, Token, TokenType } from "./scanner"
 
-export function parse(tokens: Array<Token>): Expr {
+export function parse(tokens: Array<Token>): Array<Stmt> {
   const parser = new Parser(tokens)
   return parser.parse()
 }
@@ -18,16 +18,34 @@ export class Parser {
     this.current = 0
   }
 
-  parse(): Expr {
-    try {
-      return this.expression()
-    } catch (e: unknown) {
-      if (e instanceof ParseError) {
-        throw e
-      } else {
-        throw e
-      }
+  parse(): Array<Stmt> {
+    const statements = []
+
+    while (!this.isAtEnd()) {
+      statements.push(this.statement())
     }
+
+    return statements
+  }
+
+  statement(): Stmt {
+    if (this.match("PRINT")) {
+      return this.printStatement()
+    } else {
+      return this.expressionStatement()
+    }
+  }
+
+  printStatement(): Stmt {
+    const expr = this.expression()
+    this.consume("SEMICOLON", "Expected a ; after value.")
+    return new Print(expr)
+  }
+
+  expressionStatement(): Stmt {
+    const expr = this.expression()
+    this.consume("SEMICOLON", "Expected a ; after value.")
+    return new Expression(expr)
   }
 
   expression(): Expr {
