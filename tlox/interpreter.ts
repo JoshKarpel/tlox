@@ -1,3 +1,4 @@
+import chalk from "chalk"
 import { isDeepStrictEqual } from "util"
 
 import {
@@ -158,6 +159,6 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
   }
 
   visitPrintStmt(stmt: Print): void {
-    console.log(this.evaluate(stmt.expression))
+    console.log(chalk.white(this.evaluate(stmt.expression)))
   }
 }

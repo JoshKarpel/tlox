@@ -10,11 +10,12 @@ import {
   Stmt,
   Unary,
 } from "./ast"
+import { salmon } from "./pretty"
 
 export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<string> {
   print(statements: Array<Stmt>): void {
     for (const stmt of statements) {
-      console.log(this.visitStatement(stmt))
+      console.log(salmon(this.visitStatement(stmt)))
     }
   }
 

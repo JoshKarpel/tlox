@@ -43,7 +43,6 @@ export const cli = yargs
         rl.prompt()
 
         rl.on("line", (line) => {
-          logger.log({ input: line })
           try {
             run(interpreter, line)
           } catch (e: unknown) {}
