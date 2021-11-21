@@ -99,21 +99,28 @@ class Environment {
 
 export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisitor<void> {
   environment: Environment
+  printer: AstPrinter
 
   constructor() {
     this.environment = new Environment()
+    this.printer = new AstPrinter()
   }
 
-  interpret(statements: Array<Stmt>): void {
-    for (const stmt of statements) {
-      const printer = new AstPrinter()
-      console.log(salmon(`Statement: ${printer.format([stmt])}`))
-
-      this.execute(stmt)
-
-      console.log(
-        salmon(`Environment: ${JSON.stringify(Object.fromEntries(this.environment.values))}`),
-      )
+  interpret(statements: Array<Stmt>, environment?: Environment): void {
+    const previous = this.environment
+    try {
+      if (environment !== undefined) {
+        this.environment = environment
+      }
+      for (const stmt of statements) {
+        console.log(salmon(`Statement: ${this.printer.format([stmt])}`))
+        this.execute(stmt)
+        console.log(
+          salmon(`Environment: ${JSON.stringify(Object.fromEntries(this.environment.values))}`),
+        )
+      }
+    } finally {
+      this.environment = previous
     }
   }
 
@@ -126,19 +133,6 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
   execute(stmt: Stmt): void {
     logger.log({ stmt: stmt })
     stmt.accept(this)
-  }
-
-  executeBlock(statements: Array<Stmt>, environment: Environment): void {
-    const previous = this.environment
-
-    try {
-      this.environment = environment
-      for (const stmt of statements) {
-        this.execute(stmt)
-      }
-    } finally {
-      this.environment = previous
-    }
   }
 
   visitAssign(expr: Assign): LoxObject {
@@ -246,6 +240,6 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
   }
 
   visitBlockStmt(stmt: Block): void {
-    this.executeBlock(stmt.statements, new Environment(this.environment))
+    this.interpret(stmt.statements, new Environment(this.environment))
   }
 }
