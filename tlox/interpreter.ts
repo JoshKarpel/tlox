@@ -4,6 +4,7 @@ import { isDeepStrictEqual } from "util"
 import {
   Assign,
   Binary,
+  Block,
   Expr,
   Expression,
   ExpressionVisitor,
@@ -63,8 +64,10 @@ export function isEqual(left: LoxObject, right: LoxObject): boolean {
 
 class Environment {
   values: Map<string, LoxObject>
+  enclosing: Environment | undefined
 
-  constructor() {
+  constructor(enclosing?: Environment) {
+    this.enclosing = enclosing
     this.values = new Map()
   }
 
@@ -75,6 +78,8 @@ class Environment {
   assign(name: Token, value: LoxObject): void {
     if (this.values.has(name.lexeme)) {
       this.values.set(name.lexeme, value)
+    } else if (this.enclosing !== undefined) {
+      this.enclosing.assign(name, value)
     } else {
       throw new LoxRuntimeError({ token: name, message: `Undefined variable ${name.lexeme}` })
     }
@@ -84,6 +89,8 @@ class Environment {
     const v = this.values.get(name.lexeme)
     if (v !== undefined) {
       return v
+    } else if (this.enclosing !== undefined) {
+      return this.enclosing.lookup(name)
     } else {
       throw new LoxRuntimeError({ token: name, message: `Undefined variable ${name.lexeme}` })
     }
@@ -119,6 +126,19 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
   execute(stmt: Stmt): void {
     logger.log({ stmt: stmt })
     stmt.accept(this)
+  }
+
+  executeBlock(statements: Array<Stmt>, environment: Environment): void {
+    const previous = this.environment
+
+    try {
+      this.environment = environment
+      for (const stmt of statements) {
+        this.execute(stmt)
+      }
+    } finally {
+      this.environment = previous
+    }
   }
 
   visitAssign(expr: Assign): LoxObject {
@@ -215,7 +235,7 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
   }
 
   visitPrintStmt(stmt: Print): void {
-    console.log(chalk.white(this.evaluate(stmt.expression)))
+    console.log(chalk(this.evaluate(stmt.expression)))
   }
 
   visitVarStmt(stmt: Var): void {
@@ -223,5 +243,9 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
       stmt.name.lexeme,
       stmt.initializer !== undefined ? this.evaluate(stmt.initializer) : null,
     )
+  }
+
+  visitBlockStmt(stmt: Block): void {
+    this.executeBlock(stmt.statements, new Environment(this.environment))
   }
 }

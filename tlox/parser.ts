@@ -3,6 +3,7 @@ import chalk from "chalk"
 import {
   Assign,
   Binary,
+  Block,
   Expr,
   Expression,
   Grouping,
@@ -71,9 +72,26 @@ export class Parser {
   statement(): Stmt {
     if (this.match("PRINT")) {
       return this.printStatement()
+    } else if (this.match("LEFT_BRACE")) {
+      return new Block(this.block())
     } else {
       return this.expressionStatement()
     }
+  }
+
+  block(): Array<Stmt> {
+    const stmts = []
+
+    while (!this.check("RIGHT_BRACE") && !this.isAtEnd()) {
+      const decl = this.declaration()
+      if (decl !== null) {
+        stmts.push(decl)
+      }
+    }
+
+    this.consume("RIGHT_BRACE", "Expected } after block.")
+
+    return stmts
   }
 
   printStatement(): Stmt {

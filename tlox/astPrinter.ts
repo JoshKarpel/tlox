@@ -1,6 +1,7 @@
 import {
   Assign,
   Binary,
+  Block,
   Expr,
   Expression,
   ExpressionVisitor,
@@ -75,5 +76,9 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
       `var ${stmt.name.lexeme}`,
       stmt.initializer ?? new Literal("UNINITIALIZED"),
     )
+  }
+
+  visitBlockStmt(stmt: Block): string {
+    return this.format(stmt.statements).join(" ")
   }
 }

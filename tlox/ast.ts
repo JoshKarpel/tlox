@@ -99,6 +99,7 @@ export interface StatementVisitor<T> {
   visitExpressionStmt(stmt: Expression): T
   visitPrintStmt(stmt: Print): T
   visitVarStmt(stmt: Var): T
+  visitBlockStmt(stmt: Block): T
 }
 
 export interface Stmt {
@@ -140,5 +141,17 @@ export class Var implements Stmt {
 
   accept<T>(visitor: StatementVisitor<T>): T {
     return visitor.visitVarStmt(this)
+  }
+}
+
+export class Block implements Stmt {
+  statements: Array<Stmt>
+
+  constructor(statements: Array<Stmt>) {
+    this.statements = statements
+  }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitBlockStmt(this)
   }
 }
