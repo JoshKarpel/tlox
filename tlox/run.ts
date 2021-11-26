@@ -1,6 +1,5 @@
 import chalk from "chalk"
 
-import { AstPrinter } from "./astPrinter"
 import { Interpreter, LoxRuntimeError } from "./interpreter"
 import { Logger } from "./logger"
 import { parse } from "./parser"
@@ -15,10 +14,7 @@ export function run(interpreter: Interpreter, source: string): void {
     const tokens = scan(source)
     const ast = parse(tokens)
 
-    const printer = new AstPrinter()
-    console.log(chalk.dim(printer.visit(ast)))
-
-    console.log(chalk.white(JSON.stringify(interpreter.visit(ast))))
+    interpreter.interpret(ast)
   } catch (e: unknown) {
     if (e instanceof SyntaxError) {
       console.log(chalk.red(`Syntax Error on line ${e.line}; ${e.message}`))

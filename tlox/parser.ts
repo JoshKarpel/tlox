@@ -1,9 +1,22 @@
 import chalk from "chalk"
 
-import { Binary, Expr, Grouping, Literal, Unary } from "./ast"
+import {
+  Assign,
+  Binary,
+  Block,
+  Expr,
+  Expression,
+  Grouping,
+  Literal,
+  Print,
+  Stmt,
+  Unary,
+  Var,
+  Variable,
+} from "./ast"
 import { isLiteralToken, Token, TokenType } from "./scanner"
 
-export function parse(tokens: Array<Token>): Expr {
+export function parse(tokens: Array<Token>): Array<Stmt> {
   const parser = new Parser(tokens)
   return parser.parse()
 }
@@ -11,27 +24,115 @@ export function parse(tokens: Array<Token>): Expr {
 export class Parser {
   tokens: Array<Token>
   current: number
+  errors: Array<ParseError>
 
   constructor(tokens: Array<Token>) {
     this.tokens = tokens
 
     this.current = 0
+    this.errors = []
   }
 
-  parse(): Expr {
+  parse(): Array<Stmt> {
+    const statements = []
+    const errors = []
+
+    while (!this.isAtEnd()) {
+      const d = this.declaration()
+      if (d !== null) {
+        statements.push(d)
+      }
+    }
+
+    if (errors.length > 0) {
+      throw this.errors[0]
+    }
+
+    return statements
+  }
+
+  declaration(): Stmt | null {
     try {
-      return this.expression()
+      if (this.match("VAR")) {
+        return this.varDeclaration()
+      } else {
+        return this.statement()
+      }
     } catch (e: unknown) {
       if (e instanceof ParseError) {
-        throw e
-      } else {
-        throw e
-      }
+        this.synchronize()
+        return null
+      } else throw e
     }
   }
 
+  varDeclaration(): Stmt {
+    const name = this.consume("IDENTIFIER", "Expected variable name.")
+
+    const initializer = this.match("EQUAL") ? this.expression() : undefined
+
+    this.consume("SEMICOLON", "Expected semicolon after variable declaration.")
+
+    return new Var(name, initializer)
+  }
+
+  statement(): Stmt {
+    if (this.match("PRINT")) {
+      return this.printStatement()
+    } else if (this.match("LEFT_BRACE")) {
+      return new Block(this.block())
+    } else {
+      return this.expressionStatement()
+    }
+  }
+
+  block(): Array<Stmt> {
+    const stmts = []
+
+    while (!this.check("RIGHT_BRACE") && !this.isAtEnd()) {
+      const decl = this.declaration()
+      if (decl !== null) {
+        stmts.push(decl)
+      }
+    }
+
+    this.consume("RIGHT_BRACE", "Expected } after block.")
+
+    return stmts
+  }
+
+  printStatement(): Stmt {
+    const expr = this.expression()
+    this.consume("SEMICOLON", "Expected a ; after value.")
+    return new Print(expr)
+  }
+
+  expressionStatement(): Stmt {
+    const expr = this.expression()
+    this.consume("SEMICOLON", "Expected a ; after value.")
+    return new Expression(expr)
+  }
+
   expression(): Expr {
-    return this.equality()
+    return this.assignment()
+  }
+
+  assignment(): Expr {
+    const expr = this.equality()
+
+    if (this.match("EQUAL")) {
+      const equals = this.previous()
+      const value = this.expression()
+
+      if (expr instanceof Variable) {
+        const name = expr.name
+        return new Assign(name, value)
+      } else {
+        throw this.error(equals, `Invalid assignment target ${JSON.stringify(expr)}`)
+      }
+    } else {
+      return expr
+    }
   }
 
   equality(): Expr {
@@ -106,6 +207,8 @@ export class Parser {
       } else {
         throw this.error(t, "Expected a number or string.")
       }
+    } else if (this.match("IDENTIFIER")) {
+      return new Variable(this.previous())
     } else if (this.match("LEFT_PAREN")) {
       const expr = this.expression()
       this.consume("RIGHT_PAREN", "Expected ')' after expression")
@@ -163,7 +266,9 @@ export class Parser {
 
   error(token: Token, message: string): ParseError {
     console.log(chalk.red(`Parse Error on line ${token.line} at ${token.lexeme}; ${message}`))
-    return new ParseError(this.peek(), message)
+    const error = new ParseError(this.peek(), message)
+    this.errors.push(error)
+    return error
   }
 
   synchronize(): void {

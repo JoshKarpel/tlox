@@ -26,4 +26,8 @@ jobs:
       - name: Assert no test files in dist/
         run: "! find dist/ -iname '*.test.*' | grep '.'"
       - name: Run tests
-        run: yarn test --coverage
+        run: yarn test --coverage --coverageDirectory .coverage/
+      - name: Upload coverage stats
+        uses: codecov/codecov-action@v2
+        with:
+          directory: .coverage/
