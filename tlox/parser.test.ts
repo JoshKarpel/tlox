@@ -1,4 +1,4 @@
-import { Binary, Expression, Grouping, Literal, Stmt, Unary } from "./ast"
+import { Binary, Expression, Grouping, Literal, Print, Stmt, Unary, Var, Variable } from "./ast"
 import { AstPrinter } from "./astPrinter"
 import { parse } from "./parser"
 import { LiteralToken, Token } from "./scanner"
@@ -97,11 +97,28 @@ describe("parser", () => {
       ],
       [new Expression(new Grouping(new Literal(null)))],
     ],
+    [
+      [
+        { type: "VAR", lexeme: "var", line: 1 },
+        { type: "IDENTIFIER", lexeme: "a", line: 1 },
+        { type: "EQUAL", lexeme: "=", line: 1 },
+        { type: "NUMBER", lexeme: "1", value: 1, line: 1 },
+        { type: "SEMICOLON", lexeme: ";", line: 1 },
+        { type: "PRINT", lexeme: "print", line: 2 },
+        { type: "IDENTIFIER", lexeme: "a", line: 2 },
+        { type: "SEMICOLON", lexeme: ";", line: 2 },
+        { type: "EOF", lexeme: "", line: 2 },
+      ],
+      [
+        new Var({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(1)),
+        new Print(new Variable({ type: "IDENTIFIER", lexeme: "a", line: 2 })),
+      ],
+    ],
   ]
 
   for (const [tokens, stmt] of cases) {
     const printer = new AstPrinter()
-    test(`Parse to ${printer.print(stmt)}`, () => {
+    test(`Parse ${JSON.stringify(tokens)} to ${printer.format(stmt)}`, () => {
       expect(parse(tokens)).toEqual(stmt)
     })
   }

@@ -62,7 +62,7 @@ export function isEqual(left: LoxObject, right: LoxObject): boolean {
   return isDeepStrictEqual(left, right)
 }
 
-class Environment {
+export class Environment {
   values: Map<string, LoxObject>
   enclosing: Environment | undefined
 

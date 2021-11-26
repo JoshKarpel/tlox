@@ -24,21 +24,28 @@ export function parse(tokens: Array<Token>): Array<Stmt> {
 export class Parser {
   tokens: Array<Token>
   current: number
+  errors: Array<ParseError>
 
   constructor(tokens: Array<Token>) {
     this.tokens = tokens
 
     this.current = 0
+    this.errors = []
   }
 
   parse(): Array<Stmt> {
     const statements = []
+    const errors = []
 
     while (!this.isAtEnd()) {
       const d = this.declaration()
       if (d !== null) {
         statements.push(d)
       }
+    }
+
+    if (errors.length > 0) {
+      throw this.errors[0]
     }
 
     return statements
@@ -259,7 +266,9 @@ export class Parser {
 
   error(token: Token, message: string): ParseError {
     console.log(chalk.red(`Parse Error on line ${token.line} at ${token.lexeme}; ${message}`))
-    return new ParseError(this.peek(), message)
+    const error = new ParseError(this.peek(), message)
+    this.errors.push(error)
+    return error
   }
 
   synchronize(): void {

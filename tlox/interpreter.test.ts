@@ -1,4 +1,17 @@
-import { Binary, Expr, Grouping, Literal, Unary } from "./ast"
+import {
+  Assign,
+  Binary,
+  Block,
+  Expr,
+  Expression,
+  Grouping,
+  Literal,
+  Print,
+  Stmt,
+  Unary,
+  Var,
+  Variable,
+} from "./ast"
 import { Interpreter, isEqual, isTruthy, LoxObject, LoxRuntimeError } from "./interpreter"
 
 expect.extend({
@@ -112,7 +125,79 @@ describe("interpreter", () => {
     })
   }
 
-  const runtimeErrorCases: Array<Expr> = [
+  const environmentCases: Array<[Array<Stmt>, Record<string, LoxObject>]> = [
+    [[], {}],
+    [[new Var({ type: "VAR", lexeme: "a", line: 1 })], { a: null }],
+    [[new Var({ type: "VAR", lexeme: "a", line: 1 }, new Literal(1))], { a: 1 }],
+    [
+      [
+        new Var(
+          { type: "VAR", lexeme: "a", line: 1 },
+          new Binary(new Literal(1), { type: "PLUS", lexeme: "+", line: 1 }, new Literal(2)),
+        ),
+      ],
+      { a: 3 },
+    ],
+    [
+      [
+        new Var({ type: "VAR", lexeme: "a", line: 1 }, new Literal(1)),
+        new Expression(new Assign({ type: "VAR", lexeme: "a", line: 1 }, new Literal(2))),
+      ],
+      { a: 2 },
+    ],
+    [
+      [
+        new Var({ type: "VAR", lexeme: "a", line: 1 }, new Literal(1)),
+        new Block([
+          new Expression(new Assign({ type: "VAR", lexeme: "a", line: 1 }, new Literal(2))),
+        ]),
+      ],
+      { a: 2 },
+    ],
+    [
+      [
+        new Var({ type: "VAR", lexeme: "a", line: 1 }, new Literal(1)),
+        new Var(
+          { type: "VAR", lexeme: "b", line: 1 },
+          new Binary(
+            new Variable({ type: "VAR", lexeme: "a", line: 1 }),
+            { type: "PLUS", lexeme: "+", line: 1 },
+            new Literal(1),
+          ),
+        ),
+      ],
+      { a: 1, b: 2 },
+    ],
+    [
+      [
+        new Var({ type: "VAR", lexeme: "a", line: 1 }, new Literal(1)),
+        new Block([
+          new Var(
+            { type: "VAR", lexeme: "b", line: 1 },
+            new Binary(
+              new Variable({ type: "VAR", lexeme: "a", line: 1 }),
+              { type: "PLUS", lexeme: "+", line: 1 },
+              new Literal(1),
+            ),
+          ),
+          new Print(new Variable({ type: "VAR", lexeme: "b", line: 2 })),
+        ]),
+      ],
+      { a: 1 },
+    ],
+  ]
+  for (const [stmts, values] of environmentCases) {
+    test(`Running ${JSON.stringify(stmts)} produces the environment ${JSON.stringify(
+      values,
+    )}`, () => {
+      const interpreter = new Interpreter()
+      interpreter.interpret(stmts)
+
+      expect(interpreter.environment.values).toStrictEqual(new Map(Object.entries(values)))
+    })
+  }
+
+  const runtimeErrorExprs: Array<Expr> = [
     // can't add string and number
     new Binary(new Literal(1), { type: "PLUS", lexeme: "+", line: 1 }, new Literal("bar")),
     // both expressions for - must be numbers
@@ -121,12 +206,35 @@ describe("interpreter", () => {
     new Unary({ type: "STAR", lexeme: "*", line: 1 }, new Literal(1)),
     // ! is not a legal binary operator
     new Binary(new Literal(1), { type: "BANG", lexeme: "!", line: 1 }, new Literal("bar")),
+    // undefined variable
+    new Assign({ type: "VAR", lexeme: "a", line: 1 }, new Literal(1)),
   ]
-  for (const expr of runtimeErrorCases) {
+  for (const expr of runtimeErrorExprs) {
     test(`Evaluating ${JSON.stringify(expr)} throws a runtime error`, () => {
       const interpreter = new Interpreter()
 
       expect(() => interpreter.evaluate(expr)).toThrowError(LoxRuntimeError)
+    })
+  }
+
+  const runtimeErrorStmts: Array<Array<Stmt>> = [
+    [
+      new Block([
+        new Expression(
+          new Binary(
+            new Variable({ type: "VAR", lexeme: "a", line: 1 }),
+            { type: "PLUS", lexeme: "+", line: 1 },
+            new Literal(1),
+          ),
+        ),
+      ]),
+    ],
+  ]
+  for (const stmts of runtimeErrorStmts) {
+    test(`Interpreting ${JSON.stringify(stmts)} throws a runtime error`, () => {
+      const interpreter = new Interpreter()
+
+      expect(() => interpreter.interpret(stmts)).toThrowError(LoxRuntimeError)
     })
   }
 })
