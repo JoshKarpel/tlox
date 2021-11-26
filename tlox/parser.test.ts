@@ -1,4 +1,4 @@
-import { Binary, Expression, Grouping, Literal, Print, Stmt, Unary, Var, Variable } from "./ast"
+import { Binary, Expression, Grouping, If, Literal, Print, Stmt, Unary, Var, Variable } from "./ast"
 import { AstPrinter } from "./astPrinter"
 import { parse } from "./parser"
 import { LiteralToken, Token } from "./scanner"
@@ -112,6 +112,29 @@ describe("parser", () => {
       [
         new Var({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(1)),
         new Print(new Variable({ type: "IDENTIFIER", lexeme: "a", line: 2 })),
+      ],
+    ],
+    [
+      [
+        { type: "IF", lexeme: "var", line: 1 },
+        { type: "LEFT_PAREN", lexeme: "(", line: 1 },
+        { type: "TRUE", lexeme: "true", line: 1 },
+        { type: "RIGHT_PAREN", lexeme: ")", line: 1 },
+        { type: "PRINT", lexeme: "print", line: 1 },
+        { type: "IDENTIFIER", lexeme: "a", line: 1 },
+        { type: "SEMICOLON", lexeme: ";", line: 1 },
+        { type: "ELSE", lexeme: "else", line: 1 },
+        { type: "PRINT", lexeme: "print", line: 1 },
+        { type: "IDENTIFIER", lexeme: "b", line: 1 },
+        { type: "SEMICOLON", lexeme: ";", line: 1 },
+        { type: "EOF", lexeme: "", line: 1 },
+      ],
+      [
+        new If(
+          new Literal(true),
+          new Print(new Variable({ type: "IDENTIFIER", lexeme: "a", line: 1 })),
+          new Print(new Variable({ type: "IDENTIFIER", lexeme: "b", line: 1 })),
+        ),
       ],
     ],
   ]

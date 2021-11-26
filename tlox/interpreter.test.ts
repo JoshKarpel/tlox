@@ -5,6 +5,7 @@ import {
   Expr,
   Expression,
   Grouping,
+  If,
   Literal,
   Print,
   Stmt,
@@ -127,12 +128,12 @@ describe("interpreter", () => {
 
   const environmentCases: Array<[Array<Stmt>, Record<string, LoxObject>]> = [
     [[], {}],
-    [[new Var({ type: "VAR", lexeme: "a", line: 1 })], { a: null }],
-    [[new Var({ type: "VAR", lexeme: "a", line: 1 }, new Literal(1))], { a: 1 }],
+    [[new Var({ type: "IDENTIFIER", lexeme: "a", line: 1 })], { a: null }],
+    [[new Var({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(1))], { a: 1 }],
     [
       [
         new Var(
-          { type: "VAR", lexeme: "a", line: 1 },
+          { type: "IDENTIFIER", lexeme: "a", line: 1 },
           new Binary(new Literal(1), { type: "PLUS", lexeme: "+", line: 1 }, new Literal(2)),
         ),
       ],
@@ -140,27 +141,27 @@ describe("interpreter", () => {
     ],
     [
       [
-        new Var({ type: "VAR", lexeme: "a", line: 1 }, new Literal(1)),
-        new Expression(new Assign({ type: "VAR", lexeme: "a", line: 1 }, new Literal(2))),
+        new Var({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(1)),
+        new Expression(new Assign({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(2))),
       ],
       { a: 2 },
     ],
     [
       [
-        new Var({ type: "VAR", lexeme: "a", line: 1 }, new Literal(1)),
+        new Var({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(1)),
         new Block([
-          new Expression(new Assign({ type: "VAR", lexeme: "a", line: 1 }, new Literal(2))),
+          new Expression(new Assign({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(2))),
         ]),
       ],
       { a: 2 },
     ],
     [
       [
-        new Var({ type: "VAR", lexeme: "a", line: 1 }, new Literal(1)),
+        new Var({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(1)),
         new Var(
-          { type: "VAR", lexeme: "b", line: 1 },
+          { type: "IDENTIFIER", lexeme: "b", line: 1 },
           new Binary(
-            new Variable({ type: "VAR", lexeme: "a", line: 1 }),
+            new Variable({ type: "IDENTIFIER", lexeme: "a", line: 1 }),
             { type: "PLUS", lexeme: "+", line: 1 },
             new Literal(1),
           ),
@@ -170,20 +171,42 @@ describe("interpreter", () => {
     ],
     [
       [
-        new Var({ type: "VAR", lexeme: "a", line: 1 }, new Literal(1)),
+        new Var({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(1)),
         new Block([
           new Var(
-            { type: "VAR", lexeme: "b", line: 1 },
+            { type: "IDENTIFIER", lexeme: "b", line: 1 },
             new Binary(
-              new Variable({ type: "VAR", lexeme: "a", line: 1 }),
+              new Variable({ type: "IDENTIFIER", lexeme: "a", line: 1 }),
               { type: "PLUS", lexeme: "+", line: 1 },
               new Literal(1),
             ),
           ),
-          new Print(new Variable({ type: "VAR", lexeme: "b", line: 2 })),
+          new Print(new Variable({ type: "IDENTIFIER", lexeme: "b", line: 2 })),
         ]),
       ],
       { a: 1 },
+    ],
+    [
+      [
+        new Var({ type: "VAR", lexeme: "a", line: 1 }),
+        new If(
+          new Literal(true),
+          new Expression(new Assign({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(1))),
+          new Expression(new Assign({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(2))),
+        ),
+      ],
+      { a: 1 },
+    ],
+    [
+      [
+        new Var({ type: "VAR", lexeme: "a", line: 1 }),
+        new If(
+          new Literal(false),
+          new Expression(new Assign({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(1))),
+          new Expression(new Assign({ type: "IDENTIFIER", lexeme: "a", line: 1 }, new Literal(2))),
+        ),
+      ],
+      { a: 2 },
     ],
   ]
   for (const [stmts, values] of environmentCases) {

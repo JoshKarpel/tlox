@@ -9,6 +9,7 @@ import {
   Expression,
   ExpressionVisitor,
   Grouping,
+  If,
   Literal,
   LiteralValue,
   Print,
@@ -241,5 +242,13 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
 
   visitBlockStmt(stmt: Block): void {
     this.interpret(stmt.statements, new Environment(this.environment))
+  }
+
+  visitIfStmt(stmt: If): void {
+    if (isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.thenBranch)
+    } else if (stmt.elseBranch !== undefined) {
+      this.execute(stmt.elseBranch)
+    }
   }
 }

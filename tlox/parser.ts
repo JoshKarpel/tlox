@@ -7,6 +7,7 @@ import {
   Expr,
   Expression,
   Grouping,
+  If,
   Literal,
   Print,
   Stmt,
@@ -77,7 +78,9 @@ export class Parser {
   }
 
   statement(): Stmt {
-    if (this.match("PRINT")) {
+    if (this.match("IF")) {
+      return this.ifStatement()
+    } else if (this.match("PRINT")) {
       return this.printStatement()
     } else if (this.match("LEFT_BRACE")) {
       return new Block(this.block())
@@ -99,6 +102,17 @@ export class Parser {
     this.consume("RIGHT_BRACE", "Expected } after block.")
 
     return stmts
+  }
+
+  ifStatement(): Stmt {
+    this.consume("LEFT_PAREN", "Expected ( before if condition.")
+    const condition = this.expression()
+    this.consume("RIGHT_PAREN", "Expected ) after if condition.")
+
+    const thenBranch = this.statement()
+    const elseBranch = this.match("ELSE") ? this.statement() : undefined
+
+    return new If(condition, thenBranch, elseBranch)
   }
 
   printStatement(): Stmt {

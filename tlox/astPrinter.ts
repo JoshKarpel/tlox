@@ -6,6 +6,7 @@ import {
   Expression,
   ExpressionVisitor,
   Grouping,
+  If,
   Literal,
   Print,
   StatementVisitor,
@@ -35,7 +36,7 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
     return stmt.accept(this)
   }
 
-  parenthesize(name: string, ...exprs: Array<Expr>): string {
+  parenthesize(name: string, ...exprs: Array<Expr | Stmt>): string {
     return `(${name} ${exprs.map((e) => e.accept(this)).join(` `)})`
   }
 
@@ -80,5 +81,13 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
 
   visitBlockStmt(stmt: Block): string {
     return this.format(stmt.statements).join(" ")
+  }
+
+  visitIfStmt(stmt: If): string {
+    if (stmt.elseBranch !== undefined) {
+      return this.parenthesize("if", stmt.condition, stmt.thenBranch, stmt.elseBranch)
+    } else {
+      return this.parenthesize("if", stmt.condition, stmt.thenBranch)
+    }
   }
 }

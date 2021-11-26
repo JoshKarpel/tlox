@@ -100,6 +100,7 @@ export interface StatementVisitor<T> {
   visitPrintStmt(stmt: Print): T
   visitVarStmt(stmt: Var): T
   visitBlockStmt(stmt: Block): T
+  visitIfStmt(stmt: If): T
 }
 
 export interface Stmt {
@@ -153,5 +154,21 @@ export class Block implements Stmt {
 
   accept<T>(visitor: StatementVisitor<T>): T {
     return visitor.visitBlockStmt(this)
+  }
+}
+
+export class If implements Stmt {
+  condition: Expr
+  thenBranch: Stmt
+  elseBranch: Stmt | undefined
+
+  constructor(condition: Expr, thenBranch: Stmt, elseBranch?: Stmt) {
+    this.condition = condition
+    this.thenBranch = thenBranch
+    this.elseBranch = elseBranch
+  }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitIfStmt(this)
   }
 }
