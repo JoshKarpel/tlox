@@ -83,7 +83,9 @@ export class Parser {
   }
 
   statement(): Stmt {
-    if (this.match("IF")) {
+    if (this.match("FOR")) {
+      return this.forStatement()
+    } else if (this.match("IF")) {
       return this.ifStatement()
     } else if (this.match("PRINT")) {
       return this.printStatement()
@@ -109,6 +111,36 @@ export class Parser {
     this.consume("RIGHT_BRACE", "Expected } after block.")
 
     return stmts
+  }
+
+  forStatement(): Stmt {
+    // desugar for loops into equivalent while loops
+    this.consume("LEFT_PAREN", "Expected ( after for.")
+
+    const initializer = this.match("SEMICOLON")
+      ? undefined
+      : this.match("VAR")
+      ? this.varDeclaration()
+      : this.expressionStatement()
+
+    const condition =
+      (!this.check("SEMICOLON") ? this.expression() : undefined) ?? new Literal(true)
+    this.consume("SEMICOLON", "Expected ; after for loop condition.")
+
+    const increment = !this.check("RIGHT_PAREN") ? this.expression() : undefined
+    this.consume("RIGHT_PAREN", "Expected ) after for loop increment.")
+
+    let body = this.statement()
+
+    if (increment !== undefined) {
+      body = new Block([body, new Expression(increment)])
+    }
+
+    body = new While(condition, body)
+
+    body = initializer !== undefined ? new Block([initializer, body]) : body
+
+    return body
   }
 
   ifStatement(): Stmt {

@@ -291,6 +291,19 @@ describe("interpreter", () => {
     ["print false and 1;", "false\n"],
     ["print 1 and false;", "false\n"],
     ["print 1 and 2;", "2\n"],
+    [
+      `
+      var a = 0;
+      var temp;
+
+      for (var b = 1; a < 10000; b = temp + b) {
+        print a;
+        temp = a;
+        a = b;
+      }
+      `,
+      "0\n1\n1\n2\n3\n5\n8\n13\n21\n34\n55\n89\n144\n233\n377\n610\n987\n1597\n2584\n4181\n6765\n",
+    ],
   ]
   for (const [source, output] of printCases) {
     test(`Running ${source}\noutputs\n${JSON.stringify(output)}`, () => {
