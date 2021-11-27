@@ -8,6 +8,7 @@ import {
   Grouping,
   If,
   Literal,
+  Logical,
   Print,
   StatementVisitor,
   Stmt,
@@ -89,5 +90,9 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
     } else {
       return this.parenthesize("if", stmt.condition, stmt.thenBranch)
     }
+  }
+
+  visitLogical(expr: Logical): string {
+    return this.parenthesize(expr.operator.lexeme, expr.left, expr.right)
   }
 }

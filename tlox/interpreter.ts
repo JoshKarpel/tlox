@@ -12,6 +12,7 @@ import {
   If,
   Literal,
   LiteralValue,
+  Logical,
   Print,
   StatementVisitor,
   Stmt,
@@ -226,6 +227,17 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
 
   visitVariable(expr: Variable): LoxObject {
     return this.environment.lookup(expr.name)
+  }
+
+  visitLogical(expr: Logical): LoxObject {
+    const left = this.evaluate(expr.left)
+    const truthy = isTruthy(left)
+
+    if (expr.operator.type == "OR") {
+      return truthy ? left : this.evaluate(expr.right)
+    } else {
+      return truthy ? this.evaluate(expr.right) : left
+    }
   }
 
   visitExpressionStmt(stmt: Expression): void {

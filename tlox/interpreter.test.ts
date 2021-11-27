@@ -283,6 +283,14 @@ describe("interpreter", () => {
       `,
       "1\nfoo\n2\nfoobar\n3\nfoobarbaz\n",
     ],
+    ["print 1 or 2;", "1\n"],
+    ["print false or 2;", "2\n"],
+    ["print false or false;", "false\n"],
+    ["print nil or false;", "false\n"],
+    ["print true or false;", "true\n"],
+    ["print false and 1;", "false\n"],
+    ["print 1 and false;", "false\n"],
+    ["print 1 and 2;", "2\n"],
   ]
   for (const [source, output] of printCases) {
     test(`Running ${source}\noutputs\n${JSON.stringify(output)}`, () => {

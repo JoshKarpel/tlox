@@ -9,6 +9,7 @@ import {
   Grouping,
   If,
   Literal,
+  Logical,
   Print,
   Stmt,
   Unary,
@@ -135,8 +136,9 @@ export class Parser {
   }
 
   assignment(): Expr {
-    const expr = this.equality()
+    const expr = this.or()
 
+    // handle assignment; the "expr" is now the assignment target
     if (this.match("EQUAL")) {
       const equals = this.previous()
       const value = this.expression()
@@ -150,6 +152,30 @@ export class Parser {
     } else {
       return expr
     }
+  }
+
+  or(): Expr {
+    let expr = this.and()
+
+    while (this.match("OR")) {
+      const operator = this.previous()
+      const right = this.and()
+      expr = new Logical(expr, operator, right)
+    }
+
+    return expr
+  }
+
+  and(): Expr {
+    let expr = this.equality()
+
+    while (this.match("AND")) {
+      const operator = this.previous()
+      const right = this.equality()
+      expr = new Logical(expr, operator, right)
+    }
+
+    return expr
   }
 
   equality(): Expr {
