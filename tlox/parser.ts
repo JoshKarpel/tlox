@@ -15,7 +15,10 @@ import {
   Var,
   Variable,
 } from "./ast"
+import { Logger } from "./logger"
 import { isLiteralToken, Token, TokenType } from "./scanner"
+
+const logger = Logger.context({ module: "parser" })
 
 export function parse(tokens: Array<Token>): Array<Stmt> {
   const parser = new Parser(tokens)
@@ -36,16 +39,16 @@ export class Parser {
 
   parse(): Array<Stmt> {
     const statements = []
-    const errors = []
 
     while (!this.isAtEnd()) {
       const d = this.declaration()
       if (d !== null) {
+        logger.log({ parsed: d })
         statements.push(d)
       }
     }
 
-    if (errors.length > 0) {
+    if (this.errors.length > 0) {
       throw this.errors[0]
     }
 
@@ -117,13 +120,13 @@ export class Parser {
 
   printStatement(): Stmt {
     const expr = this.expression()
-    this.consume("SEMICOLON", "Expected a ; after value.")
+    this.consume("SEMICOLON", "Expected a ; after value in print statement.")
     return new Print(expr)
   }
 
   expressionStatement(): Stmt {
     const expr = this.expression()
-    this.consume("SEMICOLON", "Expected a ; after value.")
+    this.consume("SEMICOLON", "Expected a ; after value in expression statement.")
     return new Expression(expr)
   }
 
@@ -279,7 +282,8 @@ export class Parser {
   }
 
   error(token: Token, message: string): ParseError {
-    console.log(chalk.red(`Parse Error on line ${token.line} at ${token.lexeme}; ${message}`))
+    message = `Parse Error on line ${token.line} at ${token.lexeme}; ${message}`
+    console.log(chalk.red(message))
     const error = new ParseError(this.peek(), message)
     this.errors.push(error)
     return error

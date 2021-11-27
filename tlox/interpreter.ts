@@ -101,8 +101,11 @@ export class Environment {
 export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisitor<void> {
   environment: Environment
   printer: AstPrinter
+  stdout: (chunk: string) => void
 
-  constructor() {
+  constructor(stdout: (chunk: string) => void = process.stdout.write.bind(process.stdout)) {
+    this.stdout = stdout
+
     this.environment = new Environment()
     this.printer = new AstPrinter()
   }
@@ -230,7 +233,7 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
   }
 
   visitPrintStmt(stmt: Print): void {
-    console.log(chalk(this.evaluate(stmt.expression)))
+    this.stdout(chalk(this.evaluate(stmt.expression)) + "\n")
   }
 
   visitVarStmt(stmt: Var): void {

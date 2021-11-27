@@ -7,13 +7,13 @@ import {
   Grouping,
   If,
   Literal,
-  Print,
   Stmt,
   Unary,
   Var,
   Variable,
 } from "./ast"
 import { Interpreter, isEqual, isTruthy, LoxObject, LoxRuntimeError } from "./interpreter"
+import { run } from "./run"
 
 expect.extend({
   toBeLoxEqual(received, right) {
@@ -181,7 +181,6 @@ describe("interpreter", () => {
               new Literal(1),
             ),
           ),
-          new Print(new Variable({ type: "IDENTIFIER", lexeme: "b", line: 2 })),
         ]),
       ],
       { a: 1 },
@@ -258,6 +257,45 @@ describe("interpreter", () => {
       const interpreter = new Interpreter()
 
       expect(() => interpreter.interpret(stmts)).toThrowError(LoxRuntimeError)
+    })
+  }
+
+  const printCases: Array<[string, string]> = [
+    ["print 1;", "1\n"],
+    ['if (true) print "foo"; else print "bar";', "foo\n"],
+    ['if (false) print "foo"; else print "bar";', "bar\n"],
+    [
+      `
+      var a = 1;
+      var b = "foo";
+      print a;
+      print b;
+      {
+        var a = 2;
+        b = b + "bar";
+        print a;
+        print b;
+      }
+      a = a + 2;
+      b = b + "baz";
+      print a;
+      print b;
+      `,
+      "1\nfoo\n2\nfoobar\n3\nfoobarbaz\n",
+    ],
+  ]
+  for (const [source, output] of printCases) {
+    test(`Running ${source}\noutputs\n${JSON.stringify(output)}`, () => {
+      let stdout = ""
+      const interpreter = new Interpreter((chunk: string) => {
+        stdout += chunk
+      })
+
+      run(interpreter, source)
+
+      expect(JSON.stringify(stdout.toString().replace(/_/g, ""))).toStrictEqual(
+        JSON.stringify(output),
+      )
     })
   }
 })
