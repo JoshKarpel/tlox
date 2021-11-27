@@ -15,6 +15,7 @@ import {
   Unary,
   Var,
   Variable,
+  While,
 } from "./ast"
 import { Logger } from "./logger"
 import { isLiteralToken, Token, TokenType } from "./scanner"
@@ -86,6 +87,8 @@ export class Parser {
       return this.ifStatement()
     } else if (this.match("PRINT")) {
       return this.printStatement()
+    } else if (this.match("WHILE")) {
+      return this.whileStatement()
     } else if (this.match("LEFT_BRACE")) {
       return new Block(this.block())
     } else {
@@ -123,6 +126,16 @@ export class Parser {
     const expr = this.expression()
     this.consume("SEMICOLON", "Expected a ; after value in print statement.")
     return new Print(expr)
+  }
+
+  whileStatement(): Stmt {
+    this.consume("LEFT_PAREN", "Expected ( before while condition.")
+    const condition = this.expression()
+    this.consume("RIGHT_PAREN", "Expected ) after while condition.")
+
+    const body = this.statement()
+
+    return new While(condition, body)
   }
 
   expressionStatement(): Stmt {

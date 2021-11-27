@@ -15,6 +15,7 @@ import {
   Unary,
   Var,
   Variable,
+  While,
 } from "./ast"
 import { salmon } from "./pretty"
 
@@ -94,5 +95,9 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
 
   visitLogical(expr: Logical): string {
     return this.parenthesize(expr.operator.lexeme, expr.left, expr.right)
+  }
+
+  visitWhileStmt(stmt: While): string {
+    return this.parenthesize("while", stmt.condition, stmt.body)
   }
 }

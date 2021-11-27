@@ -19,6 +19,7 @@ import {
   Unary,
   Var,
   Variable,
+  While,
 } from "./ast"
 import { AstPrinter } from "./astPrinter"
 import { Logger } from "./logger"
@@ -264,6 +265,12 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
       this.execute(stmt.thenBranch)
     } else if (stmt.elseBranch !== undefined) {
       this.execute(stmt.elseBranch)
+    }
+  }
+
+  visitWhileStmt(stmt: While): void {
+    while (isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.body)
     }
   }
 }
