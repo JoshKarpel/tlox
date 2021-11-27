@@ -292,6 +292,7 @@ describe("interpreter", () => {
     ["print 1 and false;", "false\n"],
     ["print 1 and 2;", "2\n"],
     [
+      // first 20 Fibonacci numbers
       `
       var a = 0;
       var temp;
