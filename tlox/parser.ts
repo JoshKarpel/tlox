@@ -7,14 +7,20 @@ import {
   Expr,
   Expression,
   Grouping,
+  If,
   Literal,
+  Logical,
   Print,
   Stmt,
   Unary,
   Var,
   Variable,
+  While,
 } from "./ast"
+import { Logger } from "./logger"
 import { isLiteralToken, Token, TokenType } from "./scanner"
+
+const logger = Logger.context({ module: "parser" })
 
 export function parse(tokens: Array<Token>): Array<Stmt> {
   const parser = new Parser(tokens)
@@ -35,16 +41,16 @@ export class Parser {
 
   parse(): Array<Stmt> {
     const statements = []
-    const errors = []
 
     while (!this.isAtEnd()) {
       const d = this.declaration()
       if (d !== null) {
+        logger.log({ parsed: d })
         statements.push(d)
       }
     }
 
-    if (errors.length > 0) {
+    if (this.errors.length > 0) {
       throw this.errors[0]
     }
 
@@ -77,8 +83,14 @@ export class Parser {
   }
 
   statement(): Stmt {
-    if (this.match("PRINT")) {
+    if (this.match("FOR")) {
+      return this.forStatement()
+    } else if (this.match("IF")) {
+      return this.ifStatement()
+    } else if (this.match("PRINT")) {
       return this.printStatement()
+    } else if (this.match("WHILE")) {
+      return this.whileStatement()
     } else if (this.match("LEFT_BRACE")) {
       return new Block(this.block())
     } else {
@@ -101,15 +113,66 @@ export class Parser {
     return stmts
   }
 
+  forStatement(): Stmt {
+    // desugar for loops into equivalent while loops
+    this.consume("LEFT_PAREN", "Expected ( after for.")
+
+    const initializer = this.match("SEMICOLON")
+      ? undefined
+      : this.match("VAR")
+      ? this.varDeclaration()
+      : this.expressionStatement()
+
+    const condition =
+      (!this.check("SEMICOLON") ? this.expression() : undefined) ?? new Literal(true)
+    this.consume("SEMICOLON", "Expected ; after for loop condition.")
+
+    const increment = !this.check("RIGHT_PAREN") ? this.expression() : undefined
+    this.consume("RIGHT_PAREN", "Expected ) after for loop increment.")
+
+    let body = this.statement()
+
+    if (increment !== undefined) {
+      body = new Block([body, new Expression(increment)])
+    }
+
+    body = new While(condition, body)
+
+    body = initializer !== undefined ? new Block([initializer, body]) : body
+
+    return body
+  }
+
+  ifStatement(): Stmt {
+    this.consume("LEFT_PAREN", "Expected ( before if condition.")
+    const condition = this.expression()
+    this.consume("RIGHT_PAREN", "Expected ) after if condition.")
+
+    const thenBranch = this.statement()
+    const elseBranch = this.match("ELSE") ? this.statement() : undefined
+
+    return new If(condition, thenBranch, elseBranch)
+  }
+
   printStatement(): Stmt {
     const expr = this.expression()
-    this.consume("SEMICOLON", "Expected a ; after value.")
+    this.consume("SEMICOLON", "Expected a ; after value in print statement.")
     return new Print(expr)
+  }
+
+  whileStatement(): Stmt {
+    this.consume("LEFT_PAREN", "Expected ( before while condition.")
+    const condition = this.expression()
+    this.consume("RIGHT_PAREN", "Expected ) after while condition.")
+
+    const body = this.statement()
+
+    return new While(condition, body)
   }
 
   expressionStatement(): Stmt {
     const expr = this.expression()
-    this.consume("SEMICOLON", "Expected a ; after value.")
+    this.consume("SEMICOLON", "Expected a ; after value in expression statement.")
     return new Expression(expr)
   }
 
@@ -118,8 +181,9 @@ export class Parser {
   }
 
   assignment(): Expr {
-    const expr = this.equality()
+    const expr = this.or()
 
+    // handle assignment; the "expr" is now the assignment target
     if (this.match("EQUAL")) {
       const equals = this.previous()
       const value = this.expression()
@@ -133,6 +197,30 @@ export class Parser {
     } else {
       return expr
     }
+  }
+
+  or(): Expr {
+    let expr = this.and()
+
+    while (this.match("OR")) {
+      const operator = this.previous()
+      const right = this.and()
+      expr = new Logical(expr, operator, right)
+    }
+
+    return expr
+  }
+
+  and(): Expr {
+    let expr = this.equality()
+
+    while (this.match("AND")) {
+      const operator = this.previous()
+      const right = this.equality()
+      expr = new Logical(expr, operator, right)
+    }
+
+    return expr
   }
 
   equality(): Expr {
@@ -265,7 +353,8 @@ export class Parser {
   }
 
   error(token: Token, message: string): ParseError {
-    console.log(chalk.red(`Parse Error on line ${token.line} at ${token.lexeme}; ${message}`))
+    message = `Parse Error on line ${token.line} at ${token.lexeme}; ${message}`
+    console.log(chalk.red(message))
     const error = new ParseError(this.peek(), message)
     this.errors.push(error)
     return error

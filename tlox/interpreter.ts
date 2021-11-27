@@ -9,14 +9,17 @@ import {
   Expression,
   ExpressionVisitor,
   Grouping,
+  If,
   Literal,
   LiteralValue,
+  Logical,
   Print,
   StatementVisitor,
   Stmt,
   Unary,
   Var,
   Variable,
+  While,
 } from "./ast"
 import { AstPrinter } from "./astPrinter"
 import { Logger } from "./logger"
@@ -100,8 +103,11 @@ export class Environment {
 export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisitor<void> {
   environment: Environment
   printer: AstPrinter
+  stdout: (chunk: string) => void
 
-  constructor() {
+  constructor(stdout: (chunk: string) => void = process.stdout.write.bind(process.stdout)) {
+    this.stdout = stdout
+
     this.environment = new Environment()
     this.printer = new AstPrinter()
   }
@@ -224,12 +230,23 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
     return this.environment.lookup(expr.name)
   }
 
+  visitLogical(expr: Logical): LoxObject {
+    const left = this.evaluate(expr.left)
+    const truthy = isTruthy(left)
+
+    if (expr.operator.type == "OR") {
+      return truthy ? left : this.evaluate(expr.right)
+    } else {
+      return truthy ? this.evaluate(expr.right) : left
+    }
+  }
+
   visitExpressionStmt(stmt: Expression): void {
     this.evaluate(stmt.expression)
   }
 
   visitPrintStmt(stmt: Print): void {
-    console.log(chalk(this.evaluate(stmt.expression)))
+    this.stdout(chalk(this.evaluate(stmt.expression)) + "\n")
   }
 
   visitVarStmt(stmt: Var): void {
@@ -241,5 +258,19 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
 
   visitBlockStmt(stmt: Block): void {
     this.interpret(stmt.statements, new Environment(this.environment))
+  }
+
+  visitIfStmt(stmt: If): void {
+    if (isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.thenBranch)
+    } else if (stmt.elseBranch !== undefined) {
+      this.execute(stmt.elseBranch)
+    }
+  }
+
+  visitWhileStmt(stmt: While): void {
+    while (isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.body)
+    }
   }
 }

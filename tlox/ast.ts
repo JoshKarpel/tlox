@@ -7,6 +7,7 @@ export interface ExpressionVisitor<T> {
   visitLiteral(expr: Literal): T
   visitUnary(expr: Unary): T
   visitVariable(expr: Variable): T
+  visitLogical(expr: Logical): T
 }
 
 export interface Expr {
@@ -95,11 +96,29 @@ export class Variable implements Expr {
   }
 }
 
+export class Logical implements Expr {
+  left: Expr
+  operator: Token
+  right: Expr
+
+  constructor(left: Expr, operator: Token, right: Expr) {
+    this.left = left
+    this.operator = operator
+    this.right = right
+  }
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitLogical(this)
+  }
+}
+
 export interface StatementVisitor<T> {
   visitExpressionStmt(stmt: Expression): T
   visitPrintStmt(stmt: Print): T
   visitVarStmt(stmt: Var): T
   visitBlockStmt(stmt: Block): T
+  visitIfStmt(stmt: If): T
+  visitWhileStmt(stmt: While): T
 }
 
 export interface Stmt {
@@ -153,5 +172,35 @@ export class Block implements Stmt {
 
   accept<T>(visitor: StatementVisitor<T>): T {
     return visitor.visitBlockStmt(this)
+  }
+}
+
+export class If implements Stmt {
+  condition: Expr
+  thenBranch: Stmt
+  elseBranch: Stmt | undefined
+
+  constructor(condition: Expr, thenBranch: Stmt, elseBranch?: Stmt) {
+    this.condition = condition
+    this.thenBranch = thenBranch
+    this.elseBranch = elseBranch
+  }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitIfStmt(this)
+  }
+}
+
+export class While implements Stmt {
+  condition: Expr
+  body: Stmt
+
+  constructor(condition: Expr, body: Stmt) {
+    this.condition = condition
+    this.body = body
+  }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitWhileStmt(this)
   }
 }
