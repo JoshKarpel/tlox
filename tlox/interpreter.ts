@@ -16,6 +16,7 @@ import {
   LiteralValue,
   Logical,
   Print,
+  Return,
   StatementVisitor,
   Stmt,
   Unary,
@@ -38,6 +39,16 @@ interface LoxCallable {
   arity(): number
 }
 
+class ReturnValue extends Error {
+  value: LoxObject
+
+  constructor(value: LoxObject) {
+    super()
+
+    this.value = value
+  }
+}
+
 class LoxFunction implements LoxCallable {
   declaration: Fun
 
@@ -56,7 +67,15 @@ class LoxFunction implements LoxCallable {
       environment.define(param.lexeme, arg)
     }
 
-    interpreter.interpret(this.declaration.body, environment)
+    try {
+      interpreter.interpret(this.declaration.body, environment)
+    } catch (e: unknown) {
+      if (e instanceof ReturnValue) {
+        return e.value
+      } else {
+        throw e
+      }
+    }
 
     return null
   }
@@ -318,6 +337,10 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
 
   visitPrintStmt(stmt: Print): void {
     this.stdout(chalk(this.evaluate(stmt.expression)) + "\n")
+  }
+
+  visitReturnStmt(stmt: Return): void {
+    throw new ReturnValue(stmt.expression !== undefined ? this.evaluate(stmt.expression) : null)
   }
 
   visitVarStmt(stmt: Var): void {

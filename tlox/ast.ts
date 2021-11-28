@@ -132,6 +132,7 @@ export class Call implements Expr {
 export interface StatementVisitor<T> {
   visitExpressionStmt(stmt: Expression): T
   visitPrintStmt(stmt: Print): T
+  visitReturnStmt(stmt: Return): T
   visitVarStmt(stmt: Var): T
   visitFunStmt(stmt: Fun): T
   visitBlockStmt(stmt: Block): T
@@ -164,6 +165,20 @@ export class Print implements Stmt {
 
   accept<T>(visitor: StatementVisitor<T>): T {
     return visitor.visitPrintStmt(this)
+  }
+}
+
+export class Return implements Stmt {
+  keyword: Token
+  expression: Expr
+
+  constructor(keyword: Token, expr: Expr) {
+    this.keyword = keyword
+    this.expression = expr
+  }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitReturnStmt(this)
   }
 }
 

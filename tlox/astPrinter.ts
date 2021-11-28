@@ -12,6 +12,7 @@ import {
   Literal,
   Logical,
   Print,
+  Return,
   StatementVisitor,
   Stmt,
   Unary,
@@ -78,6 +79,10 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
 
   visitPrintStmt(stmt: Print): string {
     return this.parenthesize("print", stmt.expression)
+  }
+
+  visitReturnStmt(stmt: Return): string {
+    return this.parenthesize("return", stmt.expression)
   }
 
   visitExpressionStmt(stmt: Expression): string {

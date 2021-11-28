@@ -13,6 +13,7 @@ import {
   Literal,
   Logical,
   Print,
+  Return,
   Stmt,
   Unary,
   Var,
@@ -118,6 +119,8 @@ export class Parser {
       return this.ifStatement()
     } else if (this.match("PRINT")) {
       return this.printStatement()
+    } else if (this.match("RETURN")) {
+      return this.returnStatement()
     } else if (this.match("WHILE")) {
       return this.whileStatement()
     } else if (this.match("LEFT_BRACE")) {
@@ -185,8 +188,20 @@ export class Parser {
 
   printStatement(): Stmt {
     const expr = this.expression()
-    this.consume("SEMICOLON", "Expected a ; after value in print statement.")
+    this.consume("SEMICOLON", "Expected a ; after expression in print statement.")
     return new Print(expr)
+  }
+
+  returnStatement(): Stmt {
+    const keyword = this.previous()
+
+    if (this.check("SEMICOLON")) {
+      return new Return(keyword, new Literal(null))
+    } else {
+      const expr = this.expression()
+      this.consume("SEMICOLON", "Expected a ; after expression in return statement.")
+      return new Return(keyword, expr)
+    }
   }
 
   whileStatement(): Stmt {

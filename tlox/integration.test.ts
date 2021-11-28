@@ -47,6 +47,20 @@ describe("integration", () => {
       `,
       "0\n1\n1\n2\n3\n5\n8\n13\n21\n34\n55\n89\n144\n233\n377\n610\n987\n1597\n2584\n4181\n6765\n",
     ],
+    [
+      // first 10 Fibonacci numbers using functions, loops, conditionals, early return, etc.
+      `
+      fun fib(n) {
+        if (n <= 1) return n;
+        return fib(n - 2) + fib(n - 1);
+      }
+
+      for (var i = 0; i <= 10; i = i + 1) {
+        print fib(i);
+      }
+      `,
+      "0\n1\n1\n2\n3\n5\n8\n13\n21\n34\n55\n",
+    ],
     ["clock();", ""],
     [
       `
