@@ -103,6 +103,16 @@ describe("integration", () => {
       `,
       "1\n2\n3\n",
     ],
+    [
+      `
+      fun n() {
+        return;
+      }
+
+      print n();
+      `,
+      "nil\n",
+    ],
   ]
   for (const [source, output] of cases) {
     test(`Running ${source}\noutputs\n${JSON.stringify(output)}`, () => {

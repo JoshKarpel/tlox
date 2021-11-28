@@ -195,13 +195,10 @@ export class Parser {
   returnStatement(): Stmt {
     const keyword = this.previous()
 
-    if (this.check("SEMICOLON")) {
-      return new Return(keyword, new Literal(null))
-    } else {
-      const expr = this.expression()
-      this.consume("SEMICOLON", "Expected a ; after expression in return statement.")
-      return new Return(keyword, expr)
-    }
+    const expr = this.check("SEMICOLON") ? new Literal(null) : this.expression()
+    this.consume("SEMICOLON", "Expected a ; after expression in return statement.")
+
+    return new Return(keyword, expr)
   }
 
   whileStatement(): Stmt {

@@ -338,7 +338,9 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
   }
 
   visitPrintStmt(stmt: Print): void {
-    this.stdout(chalk(this.evaluate(stmt.expression)) + "\n")
+    const value = this.evaluate(stmt.expression)
+    const p = value === null ? "nil" : value
+    this.stdout(chalk(p) + "\n")
   }
 
   visitReturnStmt(stmt: Return): void {
