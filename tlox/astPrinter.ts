@@ -6,6 +6,7 @@ import {
   Expr,
   Expression,
   ExpressionVisitor,
+  Fun,
   Grouping,
   If,
   Literal,
@@ -65,6 +66,10 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
 
   visitVariable(expr: Variable): string {
     return expr.name.lexeme
+  }
+
+  visitFunStmt(stmt: Fun): string {
+    return this.parenthesize(`fun ${stmt.name}`, ...stmt.body)
   }
 
   visitCall(expr: Call): string {

@@ -9,6 +9,7 @@ import {
   Expr,
   Expression,
   ExpressionVisitor,
+  Fun,
   Grouping,
   If,
   Literal,
@@ -26,6 +27,7 @@ import { AstPrinter } from "./astPrinter"
 import { Logger } from "./logger"
 import { salmon } from "./pretty"
 import { Token } from "./scanner"
+import { zip } from "./utils"
 
 const logger = Logger.context({ module: "interpreter" })
 
@@ -36,8 +38,35 @@ interface LoxCallable {
   arity(): number
 }
 
+class LoxFunction implements LoxCallable {
+  declaration: Fun
+
+  constructor(declaration: Fun) {
+    this.declaration = declaration
+  }
+
+  arity(): number {
+    return this.declaration.params.length
+  }
+
+  call(interpreter: Interpreter, args: Array<LoxObject>): LoxObject {
+    const environment = new Environment(interpreter.globals)
+
+    for (const [arg, param] of zip(args, this.declaration.params)) {
+      environment.define(param.lexeme, arg)
+    }
+
+    interpreter.interpret(this.declaration.body, environment)
+
+    return null
+  }
+}
+
 export function isLoxCallable(obj: LoxObject): obj is LoxCallable {
-  return typeof obj === "object" && obj !== null && obj.hasOwnProperty("call")
+  return (
+    obj instanceof LoxFunction ||
+    (typeof obj === "object" && obj !== null && obj.hasOwnProperty("call"))
+  )
 }
 
 export class LoxRuntimeError extends Error {
@@ -296,6 +325,10 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
       stmt.name.lexeme,
       stmt.initializer !== undefined ? this.evaluate(stmt.initializer) : null,
     )
+  }
+
+  visitFunStmt(stmt: Fun): void {
+    this.environment.define(stmt.name.lexeme, new LoxFunction(stmt))
   }
 
   visitBlockStmt(stmt: Block): void {

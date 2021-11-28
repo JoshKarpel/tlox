@@ -7,6 +7,7 @@ import {
   Call,
   Expr,
   Expression,
+  Fun,
   Grouping,
   If,
   Literal,
@@ -62,6 +63,8 @@ export class Parser {
     try {
       if (this.match("VAR")) {
         return this.varDeclaration()
+      } else if (this.match("FUN")) {
+        return this.funDeclaration("function")
       } else {
         return this.statement()
       }
@@ -81,6 +84,31 @@ export class Parser {
     this.consume("SEMICOLON", "Expected semicolon after variable declaration.")
 
     return new Var(name, initializer)
+  }
+
+  funDeclaration(kind: "function" | "method"): Stmt {
+    const name = this.consume("IDENTIFIER", `Expected ${kind} name.`)
+
+    this.consume("LEFT_PAREN", `Expected ( after ${kind} name.`)
+
+    const params = []
+    if (!this.check("RIGHT_PAREN")) {
+      params.push(this.consume("IDENTIFIER", `${kind} parameters must be identifiers.`))
+      while (this.match("COMMA")) {
+        params.push(this.consume("IDENTIFIER", `${kind} parameters must be identifiers.`))
+
+        if (params.length > 255) {
+          this.error(this.peek(), "Can't have more than 255 parameters.")
+        }
+      }
+    }
+
+    this.consume("RIGHT_PAREN", "Expected ) after parameters.")
+    this.consume("LEFT_BRACE", `Expected { before ${kind} body.`)
+
+    const body = this.block()
+
+    return new Fun(name, params, body)
   }
 
   statement(): Stmt {

@@ -133,6 +133,7 @@ export interface StatementVisitor<T> {
   visitExpressionStmt(stmt: Expression): T
   visitPrintStmt(stmt: Print): T
   visitVarStmt(stmt: Var): T
+  visitFunStmt(stmt: Fun): T
   visitBlockStmt(stmt: Block): T
   visitIfStmt(stmt: If): T
   visitWhileStmt(stmt: While): T
@@ -177,6 +178,22 @@ export class Var implements Stmt {
 
   accept<T>(visitor: StatementVisitor<T>): T {
     return visitor.visitVarStmt(this)
+  }
+}
+
+export class Fun implements Stmt {
+  name: Token
+  params: Array<Token>
+  body: Array<Stmt>
+
+  constructor(name: Token, params: Array<Token>, body: Array<Stmt>) {
+    this.name = name
+    this.params = params
+    this.body = body
+  }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitFunStmt(this)
   }
 }
 

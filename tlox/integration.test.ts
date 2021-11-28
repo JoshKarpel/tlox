@@ -48,6 +48,27 @@ describe("integration", () => {
       "0\n1\n1\n2\n3\n5\n8\n13\n21\n34\n55\n89\n144\n233\n377\n610\n987\n1597\n2584\n4181\n6765\n",
     ],
     ["clock();", ""],
+    [
+      `
+      fun count(n) {
+        if (n > 1) count(n - 1);
+        print n;
+      }
+
+      count(3);
+      `,
+      "1\n2\n3\n",
+    ],
+    [
+      `
+      fun add(a, b, c) {
+        print a + b + c;
+      }
+
+      add(1, 2, 3);
+      `,
+      "6\n",
+    ],
   ]
   for (const [source, output] of cases) {
     test(`Running ${source}\noutputs\n${JSON.stringify(output)}`, () => {
