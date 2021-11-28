@@ -83,6 +83,26 @@ describe("integration", () => {
       `,
       "6\n",
     ],
+    [
+      // function with closure
+      `
+      fun makeCounter() {
+        var i = 0;
+        fun count() {
+          i = i + 1;
+          print i;
+        }
+
+        return count;
+      }
+
+      var counter = makeCounter();
+      counter();
+      counter();
+      counter();
+      `,
+      "1\n2\n3\n",
+    ],
   ]
   for (const [source, output] of cases) {
     test(`Running ${source}\noutputs\n${JSON.stringify(output)}`, () => {

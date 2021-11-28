@@ -51,9 +51,11 @@ class ReturnValue extends Error {
 
 class LoxFunction implements LoxCallable {
   declaration: Fun
+  closure: Environment
 
-  constructor(declaration: Fun) {
+  constructor(declaration: Fun, closure: Environment) {
     this.declaration = declaration
+    this.closure = closure
   }
 
   arity(): number {
@@ -61,7 +63,7 @@ class LoxFunction implements LoxCallable {
   }
 
   call(interpreter: Interpreter, args: Array<LoxObject>): LoxObject {
-    const environment = new Environment(interpreter.globals)
+    const environment = new Environment(this.closure)
 
     for (const [arg, param] of zip(args, this.declaration.params)) {
       environment.define(param.lexeme, arg)
@@ -351,7 +353,7 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
   }
 
   visitFunStmt(stmt: Fun): void {
-    this.environment.define(stmt.name.lexeme, new LoxFunction(stmt))
+    this.environment.define(stmt.name.lexeme, new LoxFunction(stmt, this.environment))
   }
 
   visitBlockStmt(stmt: Block): void {
