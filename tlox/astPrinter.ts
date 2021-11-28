@@ -20,15 +20,8 @@ import {
   Variable,
   While,
 } from "./ast"
-import { salmon } from "./pretty"
 
 export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<string> {
-  print(statements: Array<Stmt>): void {
-    for (const stmt of statements) {
-      console.log(salmon(this.visitStatement(stmt)))
-    }
-  }
-
   format(statements: Array<Stmt>): Array<string> {
     return statements.map((stmt) => this.visitStatement(stmt))
   }
