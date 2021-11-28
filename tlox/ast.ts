@@ -8,6 +8,7 @@ export interface ExpressionVisitor<T> {
   visitUnary(expr: Unary): T
   visitVariable(expr: Variable): T
   visitLogical(expr: Logical): T
+  visitCall(expr: Call): T
 }
 
 export interface Expr {
@@ -112,10 +113,28 @@ export class Logical implements Expr {
   }
 }
 
+export class Call implements Expr {
+  callee: Expr
+  paren: Token
+  args: Array<Expr>
+
+  constructor(callee: Expr, paren: Token, args: Array<Expr>) {
+    this.callee = callee
+    this.paren = paren
+    this.args = args
+  }
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitCall(this)
+  }
+}
+
 export interface StatementVisitor<T> {
   visitExpressionStmt(stmt: Expression): T
   visitPrintStmt(stmt: Print): T
+  visitReturnStmt(stmt: Return): T
   visitVarStmt(stmt: Var): T
+  visitFunStmt(stmt: Fun): T
   visitBlockStmt(stmt: Block): T
   visitIfStmt(stmt: If): T
   visitWhileStmt(stmt: While): T
@@ -149,6 +168,20 @@ export class Print implements Stmt {
   }
 }
 
+export class Return implements Stmt {
+  keyword: Token
+  expression: Expr
+
+  constructor(keyword: Token, expr: Expr) {
+    this.keyword = keyword
+    this.expression = expr
+  }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitReturnStmt(this)
+  }
+}
+
 export class Var implements Stmt {
   name: Token
   initializer?: Expr
@@ -160,6 +193,22 @@ export class Var implements Stmt {
 
   accept<T>(visitor: StatementVisitor<T>): T {
     return visitor.visitVarStmt(this)
+  }
+}
+
+export class Fun implements Stmt {
+  name: Token
+  params: Array<Token>
+  body: Array<Stmt>
+
+  constructor(name: Token, params: Array<Token>, body: Array<Stmt>) {
+    this.name = name
+    this.params = params
+    this.body = body
+  }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitFunStmt(this)
   }
 }
 

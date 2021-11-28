@@ -4,13 +4,16 @@ import {
   Assign,
   Binary,
   Block,
+  Call,
   Expr,
   Expression,
+  Fun,
   Grouping,
   If,
   Literal,
   Logical,
   Print,
+  Return,
   Stmt,
   Unary,
   Var,
@@ -61,6 +64,8 @@ export class Parser {
     try {
       if (this.match("VAR")) {
         return this.varDeclaration()
+      } else if (this.match("FUN")) {
+        return this.funDeclaration("function")
       } else {
         return this.statement()
       }
@@ -82,6 +87,31 @@ export class Parser {
     return new Var(name, initializer)
   }
 
+  funDeclaration(kind: "function" | "method"): Stmt {
+    const name = this.consume("IDENTIFIER", `Expected ${kind} name.`)
+
+    this.consume("LEFT_PAREN", `Expected ( after ${kind} name.`)
+
+    const params = []
+    if (!this.check("RIGHT_PAREN")) {
+      params.push(this.consume("IDENTIFIER", `${kind} parameters must be identifiers.`))
+      while (this.match("COMMA")) {
+        params.push(this.consume("IDENTIFIER", `${kind} parameters must be identifiers.`))
+
+        if (params.length > 255) {
+          this.error(this.peek(), "Can't have more than 255 parameters.")
+        }
+      }
+    }
+
+    this.consume("RIGHT_PAREN", "Expected ) after parameters.")
+    this.consume("LEFT_BRACE", `Expected { before ${kind} body.`)
+
+    const body = this.block()
+
+    return new Fun(name, params, body)
+  }
+
   statement(): Stmt {
     if (this.match("FOR")) {
       return this.forStatement()
@@ -89,6 +119,8 @@ export class Parser {
       return this.ifStatement()
     } else if (this.match("PRINT")) {
       return this.printStatement()
+    } else if (this.match("RETURN")) {
+      return this.returnStatement()
     } else if (this.match("WHILE")) {
       return this.whileStatement()
     } else if (this.match("LEFT_BRACE")) {
@@ -156,8 +188,17 @@ export class Parser {
 
   printStatement(): Stmt {
     const expr = this.expression()
-    this.consume("SEMICOLON", "Expected a ; after value in print statement.")
+    this.consume("SEMICOLON", "Expected a ; after expression in print statement.")
     return new Print(expr)
+  }
+
+  returnStatement(): Stmt {
+    const keyword = this.previous()
+
+    const expr = this.check("SEMICOLON") ? new Literal(null) : this.expression()
+    this.consume("SEMICOLON", "Expected a ; after expression in return statement.")
+
+    return new Return(keyword, expr)
   }
 
   whileStatement(): Stmt {
@@ -278,7 +319,40 @@ export class Parser {
       return new Unary(operator, right)
     }
 
-    return this.primary()
+    return this.call()
+  }
+
+  call(): Expr {
+    let expr = this.primary()
+
+    while (true) {
+      if (this.match("LEFT_PAREN")) {
+        expr = this.finishCall(expr)
+      } else {
+        break
+      }
+    }
+
+    return expr
+  }
+
+  finishCall(callee: Expr): Expr {
+    const args: Array<Expr> = []
+
+    if (!this.check("RIGHT_PAREN")) {
+      args.push(this.expression())
+      while (this.match("COMMA")) {
+        args.push(this.expression())
+
+        if (args.length > 255) {
+          this.error(this.peek(), "Can't have more than 255 arguments.")
+        }
+      }
+    }
+
+    const paren = this.consume("RIGHT_PAREN", "Expected ) after function arguments.")
+
+    return new Call(callee, paren, args)
   }
 
   primary(): Expr {

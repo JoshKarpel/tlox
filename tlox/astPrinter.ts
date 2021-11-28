@@ -2,14 +2,17 @@ import {
   Assign,
   Binary,
   Block,
+  Call,
   Expr,
   Expression,
   ExpressionVisitor,
+  Fun,
   Grouping,
   If,
   Literal,
   Logical,
   Print,
+  Return,
   StatementVisitor,
   Stmt,
   Unary,
@@ -17,15 +20,8 @@ import {
   Variable,
   While,
 } from "./ast"
-import { salmon } from "./pretty"
 
 export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<string> {
-  print(statements: Array<Stmt>): void {
-    for (const stmt of statements) {
-      console.log(salmon(this.visitStatement(stmt)))
-    }
-  }
-
   format(statements: Array<Stmt>): Array<string> {
     return statements.map((stmt) => this.visitStatement(stmt))
   }
@@ -66,8 +62,20 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
     return expr.name.lexeme
   }
 
+  visitFunStmt(stmt: Fun): string {
+    return this.parenthesize(`fun ${stmt.name}`, ...stmt.body)
+  }
+
+  visitCall(expr: Call): string {
+    return this.parenthesize("call", expr.callee)
+  }
+
   visitPrintStmt(stmt: Print): string {
     return this.parenthesize("print", stmt.expression)
+  }
+
+  visitReturnStmt(stmt: Return): string {
+    return this.parenthesize("return", stmt.expression)
   }
 
   visitExpressionStmt(stmt: Expression): string {

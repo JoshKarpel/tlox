@@ -5,15 +5,18 @@ import {
   Assign,
   Binary,
   Block,
+  Call,
   Expr,
   Expression,
   ExpressionVisitor,
+  Fun,
   Grouping,
   If,
   Literal,
   LiteralValue,
   Logical,
   Print,
+  Return,
   StatementVisitor,
   Stmt,
   Unary,
@@ -25,10 +28,67 @@ import { AstPrinter } from "./astPrinter"
 import { Logger } from "./logger"
 import { salmon } from "./pretty"
 import { Token } from "./scanner"
+import { zip } from "./utils"
 
 const logger = Logger.context({ module: "interpreter" })
 
-export type LoxObject = LiteralValue
+export type LoxObject = LiteralValue | LoxCallable
+
+interface LoxCallable {
+  call(interpreter: Interpreter, args: Array<LoxObject>): LoxObject
+  arity(): number
+}
+
+class ReturnValue extends Error {
+  value: LoxObject
+
+  constructor(value: LoxObject) {
+    super()
+
+    this.value = value
+  }
+}
+
+class LoxFunction implements LoxCallable {
+  declaration: Fun
+  closure: Environment
+
+  constructor(declaration: Fun, closure: Environment) {
+    this.declaration = declaration
+    this.closure = closure
+  }
+
+  arity(): number {
+    return this.declaration.params.length
+  }
+
+  call(interpreter: Interpreter, args: Array<LoxObject>): LoxObject {
+    const environment = new Environment(this.closure)
+
+    for (const [arg, param] of zip(args, this.declaration.params)) {
+      environment.define(param.lexeme, arg)
+    }
+
+    try {
+      interpreter.interpret(this.declaration.body, environment)
+    } catch (e: unknown) {
+      if (e instanceof ReturnValue) {
+        return e.value
+      } else {
+        throw e
+      }
+    }
+
+    return null
+  }
+}
+
+export function isLoxCallable(obj: LoxObject): obj is LoxCallable {
+  return (
+    obj instanceof LoxFunction ||
+    (typeof obj === "object" && obj !== null && obj.hasOwnProperty("call"))
+  )
+}
 
 export class LoxRuntimeError extends Error {
   token: Token
@@ -102,13 +162,21 @@ export class Environment {
 
 export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisitor<void> {
   environment: Environment
+  globals: Environment
   printer: AstPrinter
   stdout: (chunk: string) => void
 
   constructor(stdout: (chunk: string) => void = process.stdout.write.bind(process.stdout)) {
     this.stdout = stdout
 
-    this.environment = new Environment()
+    this.environment = this.globals = new Environment()
+    this.globals.define("clock", {
+      arity: () => 0,
+      call(_interpreter: Interpreter, _args: Array<LoxObject>): LoxObject {
+        return Date.now() / 1000
+      },
+    })
+
     this.printer = new AstPrinter()
   }
 
@@ -241,12 +309,42 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
     }
   }
 
+  visitCall(expr: Call): LoxObject {
+    const callee = this.evaluate(expr.callee)
+
+    if (!isLoxCallable(callee)) {
+      throw new LoxRuntimeError({
+        token: expr.paren,
+        message: `${JSON.stringify(callee)} is not callable.`,
+      })
+    }
+
+    const args = expr.args.map((arg) => this.evaluate(arg))
+
+    if (args.length !== callee.arity()) {
+      throw new LoxRuntimeError({
+        token: expr.paren,
+        message: `${JSON.stringify(callee)} has arity of ${callee.arity()} but was called with ${
+          args.length
+        } arguments.`,
+      })
+    }
+
+    return callee.call(this, args)
+  }
+
   visitExpressionStmt(stmt: Expression): void {
     this.evaluate(stmt.expression)
   }
 
   visitPrintStmt(stmt: Print): void {
-    this.stdout(chalk(this.evaluate(stmt.expression)) + "\n")
+    const value = this.evaluate(stmt.expression)
+    const p = value === null ? "nil" : value
+    this.stdout(chalk(p) + "\n")
+  }
+
+  visitReturnStmt(stmt: Return): void {
+    throw new ReturnValue(stmt.expression !== undefined ? this.evaluate(stmt.expression) : null)
   }
 
   visitVarStmt(stmt: Var): void {
@@ -254,6 +352,10 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
       stmt.name.lexeme,
       stmt.initializer !== undefined ? this.evaluate(stmt.initializer) : null,
     )
+  }
+
+  visitFunStmt(stmt: Fun): void {
+    this.environment.define(stmt.name.lexeme, new LoxFunction(stmt, this.environment))
   }
 
   visitBlockStmt(stmt: Block): void {
