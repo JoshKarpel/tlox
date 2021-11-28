@@ -2,6 +2,7 @@ import {
   Assign,
   Binary,
   Block,
+  Call,
   Expr,
   Expression,
   ExpressionVisitor,
@@ -64,6 +65,10 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
 
   visitVariable(expr: Variable): string {
     return expr.name.lexeme
+  }
+
+  visitCall(expr: Call): string {
+    return this.parenthesize("call", expr.callee)
   }
 
   visitPrintStmt(stmt: Print): string {

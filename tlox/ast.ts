@@ -8,6 +8,7 @@ export interface ExpressionVisitor<T> {
   visitUnary(expr: Unary): T
   visitVariable(expr: Variable): T
   visitLogical(expr: Logical): T
+  visitCall(expr: Call): T
 }
 
 export interface Expr {
@@ -109,6 +110,22 @@ export class Logical implements Expr {
 
   accept<T>(visitor: ExpressionVisitor<T>): T {
     return visitor.visitLogical(this)
+  }
+}
+
+export class Call implements Expr {
+  callee: Expr
+  paren: Token
+  args: Array<Expr>
+
+  constructor(callee: Expr, paren: Token, args: Array<Expr>) {
+    this.callee = callee
+    this.paren = paren
+    this.args = args
+  }
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitCall(this)
   }
 }
 

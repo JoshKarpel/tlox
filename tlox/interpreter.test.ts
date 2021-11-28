@@ -212,9 +212,16 @@ describe("interpreter", () => {
       values,
     )}`, () => {
       const interpreter = new Interpreter()
+
+      const globalNames = Array.from(interpreter.globals.values.keys())
+
       interpreter.interpret(stmts)
 
-      expect(interpreter.environment.values).toStrictEqual(new Map(Object.entries(values)))
+      const envWithoutGlobals = Array.from(interpreter.environment.values.entries()).filter(
+        ([key, _val]) => !globalNames.includes(key),
+      )
+
+      expect(new Map(envWithoutGlobals)).toStrictEqual(new Map(Object.entries(values)))
     })
   }
 

@@ -5,6 +5,7 @@ import {
   Assign,
   Binary,
   Block,
+  Call,
   Expr,
   Expression,
   ExpressionVisitor,
@@ -28,7 +29,16 @@ import { Token } from "./scanner"
 
 const logger = Logger.context({ module: "interpreter" })
 
-export type LoxObject = LiteralValue
+export type LoxObject = LiteralValue | LoxCallable
+
+interface LoxCallable {
+  call(interpreter: Interpreter, args: Array<LoxObject>): LoxObject
+  arity(): number
+}
+
+export function isLoxCallable(obj: LoxObject): obj is LoxCallable {
+  return typeof obj === "object" && obj !== null && obj.hasOwnProperty("call")
+}
 
 export class LoxRuntimeError extends Error {
   token: Token
@@ -102,13 +112,21 @@ export class Environment {
 
 export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisitor<void> {
   environment: Environment
+  globals: Environment
   printer: AstPrinter
   stdout: (chunk: string) => void
 
   constructor(stdout: (chunk: string) => void = process.stdout.write.bind(process.stdout)) {
     this.stdout = stdout
 
-    this.environment = new Environment()
+    this.environment = this.globals = new Environment()
+    this.globals.define("clock", {
+      arity: () => 0,
+      call(_interpreter: Interpreter, _args: Array<LoxObject>): LoxObject {
+        return Date.now() / 1000
+      },
+    })
+
     this.printer = new AstPrinter()
   }
 
@@ -239,6 +257,30 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
     } else {
       return truthy ? this.evaluate(expr.right) : left
     }
+  }
+
+  visitCall(expr: Call): LoxObject {
+    const callee = this.evaluate(expr.callee)
+
+    if (!isLoxCallable(callee)) {
+      throw new LoxRuntimeError({
+        token: expr.paren,
+        message: `${JSON.stringify(callee)} is not callable.`,
+      })
+    }
+
+    const args = expr.args.map((arg) => this.evaluate(arg))
+
+    if (args.length !== callee.arity()) {
+      throw new LoxRuntimeError({
+        token: expr.paren,
+        message: `${JSON.stringify(callee)} has arity of ${callee.arity()} but was called with ${
+          args.length
+        } arguments.`,
+      })
+    }
+
+    return callee.call(this, args)
   }
 
   visitExpressionStmt(stmt: Expression): void {
