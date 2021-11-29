@@ -459,7 +459,7 @@ export class Parser {
   }
 }
 
-class ParseError extends Error {
+export class ParseError extends Error {
   token: Token
   message: string
 
