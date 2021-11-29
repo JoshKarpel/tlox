@@ -21,19 +21,22 @@ import {
   While,
 } from "./ast"
 import { Interpreter } from "./interpreter"
-import { ParseError } from "./parser"
+import { LoxParseError } from "./parser"
 import { Token } from "./scanner"
 
 type Scope = Map<string, boolean>
+type FunctionType = "none" | "function"
 
 export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> {
   interpreter: Interpreter
   scopes: Array<Scope>
+  currentFunctionType: FunctionType
 
   constructor(interpreter: Interpreter) {
     this.interpreter = interpreter
 
     this.scopes = []
+    this.currentFunctionType = "none"
   }
 
   currentScope(): Scope | undefined {
@@ -66,7 +69,10 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
     // falling through is fine - that means it's a global
   }
 
-  resolveFunction(stmt: Fun): void {
+  resolveFunction(stmt: Fun, type: FunctionType): void {
+    const enclosingFunctionType = this.currentFunctionType
+    this.currentFunctionType = type
+
     this.beginScope()
     for (const param of stmt.params) {
       this.declare(param)
@@ -74,6 +80,8 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
     }
     this.resolveMany(stmt.body)
     this.endScope()
+
+    this.currentFunctionType = enclosingFunctionType
   }
 
   beginScope(): void {
@@ -88,9 +96,16 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
     const scope = this.currentScope()
     if (scope === undefined) {
       return
-    } else {
-      scope.set(name.lexeme, false) // false means "not ready yet"
     }
+
+    if (scope.has(name.lexeme)) {
+      throw new LoxParseError(
+        name,
+        `There is already a variable named ${name.lexeme} in this scope."`,
+      )
+    }
+
+    scope.set(name.lexeme, false) // false means "not ready yet"
   }
 
   define(name: Token): void {
@@ -119,7 +134,7 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
   visitVariable(expr: Variable): void {
     const scope = this.currentScope()
     if (scope !== undefined && scope.get(expr.name.lexeme) === false) {
-      throw new ParseError(
+      throw new LoxParseError(
         expr.name,
         `Cannot read local variable ${expr.name.lexeme} in its own initializer.`,
       )
@@ -136,10 +151,8 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
   visitFunStmt(stmt: Fun): void {
     this.declare(stmt.name)
     this.define(stmt.name)
-    this.resolveFunction(stmt)
+    this.resolveFunction(stmt, "function")
   }
-
-  // boring stuff below, just need to walk through the whole tree
 
   visitExpressionStmt(stmt: Expression): void {
     this.resolve(stmt.expression)
@@ -158,6 +171,9 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
   }
 
   visitReturnStmt(stmt: Return): void {
+    if (this.currentFunctionType === "none") {
+      throw new LoxParseError(stmt.keyword, "Can't return at global scope.")
+    }
     this.resolve(stmt.expression)
   }
 
