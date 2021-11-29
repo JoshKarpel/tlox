@@ -33,7 +33,7 @@ export function parse(tokens: Array<Token>): Array<Stmt> {
 export class Parser {
   tokens: Array<Token>
   current: number
-  errors: Array<ParseError>
+  errors: Array<LoxParseError>
 
   constructor(tokens: Array<Token>) {
     this.tokens = tokens
@@ -70,7 +70,7 @@ export class Parser {
         return this.statement()
       }
     } catch (e: unknown) {
-      if (e instanceof ParseError) {
+      if (e instanceof LoxParseError) {
         this.synchronize()
         return null
       } else throw e
@@ -426,10 +426,10 @@ export class Parser {
     }
   }
 
-  error(token: Token, message: string): ParseError {
+  error(token: Token, message: string): LoxParseError {
     message = `Parse Error on line ${token.line} at ${token.lexeme}; ${message}`
     console.log(chalk.red(message))
-    const error = new ParseError(this.peek(), message)
+    const error = new LoxParseError(this.peek(), message)
     this.errors.push(error)
     return error
   }
@@ -459,7 +459,7 @@ export class Parser {
   }
 }
 
-class ParseError extends Error {
+export class LoxParseError extends Error {
   token: Token
   message: string
 

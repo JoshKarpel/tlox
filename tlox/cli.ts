@@ -30,7 +30,11 @@ export const cli = yargs
       const interpreter = new Interpreter()
 
       if (argv.path !== undefined) {
-        run(interpreter, readFileSync(argv.path).toString())
+        try {
+          run(interpreter, readFileSync(argv.path).toString())
+        } catch (e: unknown) {
+          process.exit(1)
+        }
       } else {
         console.log(salmon("Welcome to tlox!"))
         const rl = readline.createInterface({

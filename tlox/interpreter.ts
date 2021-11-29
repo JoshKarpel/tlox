@@ -25,6 +25,7 @@ import {
   While,
 } from "./ast"
 import { AstPrinter } from "./astPrinter"
+import { Environment } from "./environment"
 import { Logger } from "./logger"
 import { salmon } from "./pretty"
 import { Token } from "./scanner"
@@ -125,46 +126,12 @@ export function isEqual(left: LoxObject, right: LoxObject): boolean {
   return isDeepStrictEqual(left, right)
 }
 
-export class Environment {
-  values: Map<string, LoxObject>
-  enclosing: Environment | undefined
-
-  constructor(enclosing?: Environment) {
-    this.enclosing = enclosing
-    this.values = new Map()
-  }
-
-  define(name: string, value: LoxObject): void {
-    this.values.set(name, value)
-  }
-
-  assign(name: Token, value: LoxObject): void {
-    if (this.values.has(name.lexeme)) {
-      this.values.set(name.lexeme, value)
-    } else if (this.enclosing !== undefined) {
-      this.enclosing.assign(name, value)
-    } else {
-      throw new LoxRuntimeError({ token: name, message: `Undefined variable ${name.lexeme}` })
-    }
-  }
-
-  lookup(name: Token): LoxObject {
-    const v = this.values.get(name.lexeme)
-    if (v !== undefined) {
-      return v
-    } else if (this.enclosing !== undefined) {
-      return this.enclosing.lookup(name)
-    } else {
-      throw new LoxRuntimeError({ token: name, message: `Undefined variable ${name.lexeme}` })
-    }
-  }
-}
-
 export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisitor<void> {
+  stdout: (chunk: string) => void
   environment: Environment
   globals: Environment
+  locals: Map<Expr, number>
   printer: AstPrinter
-  stdout: (chunk: string) => void
 
   constructor(stdout: (chunk: string) => void = process.stdout.write.bind(process.stdout)) {
     this.stdout = stdout
@@ -176,6 +143,8 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
         return Date.now() / 1000
       },
     })
+
+    this.locals = new Map()
 
     this.printer = new AstPrinter()
   }
@@ -209,9 +178,30 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
     stmt.accept(this)
   }
 
+  resolve(expr: Expr, depth: number): void {
+    this.locals.set(expr, depth)
+    console.log(expr, depth)
+  }
+
+  lookupVariable(name: Token, expr: Expr): LoxObject {
+    const distance = this.locals.get(expr)
+    if (distance !== undefined) {
+      return this.environment.getAt(distance, name)
+    } else {
+      return this.globals.lookup(name)
+    }
+  }
+
   visitAssign(expr: Assign): LoxObject {
     const value = this.evaluate(expr.value)
-    this.environment.assign(expr.name, value)
+
+    const distance = this.locals.get(expr)
+    if (distance !== undefined) {
+      this.environment.assignAt(distance, expr.name, value)
+    } else {
+      this.globals.assign(expr.name, value)
+    }
+
     return value
   }
 
@@ -295,7 +285,7 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
   }
 
   visitVariable(expr: Variable): LoxObject {
-    return this.environment.lookup(expr.name)
+    return this.lookupVariable(expr.name, expr)
   }
 
   visitLogical(expr: Logical): LoxObject {

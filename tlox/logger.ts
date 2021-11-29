@@ -25,5 +25,3 @@ export class Logger {
     return JSON.stringify(data)
   }
 }
-
-export const logger = new Logger()
