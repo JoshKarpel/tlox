@@ -6,6 +6,7 @@ import {
   Binary,
   Block,
   Call,
+  Class,
   Expr,
   Expression,
   ExpressionVisitor,
@@ -33,7 +34,7 @@ import { zip } from "./utils"
 
 const logger = Logger.context({ module: "interpreter" })
 
-export type LoxObject = LiteralValue | LoxCallable
+export type LoxObject = LiteralValue | LoxCallable | LoxClass | LoxInstance
 
 interface LoxCallable {
   call(interpreter: Interpreter, args: Array<LoxObject>): LoxObject
@@ -84,9 +85,34 @@ class LoxFunction implements LoxCallable {
   }
 }
 
+export class LoxClass implements LoxCallable {
+  name: string
+
+  constructor(name: string) {
+    this.name = name
+  }
+
+  arity(): number {
+    return 0
+  }
+
+  call(_interpreter: Interpreter, _args: Array<LoxObject>): LoxObject {
+    return new LoxInstance(this)
+  }
+}
+
+export class LoxInstance {
+  cls: LoxClass
+
+  constructor(cls: LoxClass) {
+    this.cls = cls
+  }
+}
+
 export function isLoxCallable(obj: LoxObject): obj is LoxCallable {
   return (
     obj instanceof LoxFunction ||
+    obj instanceof LoxClass ||
     (typeof obj === "object" && obj !== null && obj.hasOwnProperty("call"))
   )
 }
@@ -350,6 +376,12 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
 
   visitBlockStmt(stmt: Block): void {
     this.interpret(stmt.statements, new Environment(this.environment))
+  }
+
+  visitClassStmt(stmt: Class): void {
+    this.environment.define(stmt.name.lexeme, null)
+    const cls = new LoxClass(stmt.name.lexeme)
+    this.environment.assign(stmt.name, cls)
   }
 
   visitIfStmt(stmt: If): void {

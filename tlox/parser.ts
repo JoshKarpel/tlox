@@ -5,6 +5,7 @@ import {
   Binary,
   Block,
   Call,
+  Class,
   Expr,
   Expression,
   Fun,
@@ -62,7 +63,9 @@ export class Parser {
 
   declaration(): Stmt | null {
     try {
-      if (this.match("VAR")) {
+      if (this.match("CLASS")) {
+        return this.classDeclaration()
+      } else if (this.match("VAR")) {
         return this.varDeclaration()
       } else if (this.match("FUN")) {
         return this.funDeclaration("function")
@@ -77,7 +80,21 @@ export class Parser {
     }
   }
 
-  varDeclaration(): Stmt {
+  classDeclaration(): Class {
+    const token = this.consume("IDENTIFIER", "Expected class name.")
+    this.consume("LEFT_BRACE", "Expected { before class body.")
+
+    const methods = []
+    while (!this.check("RIGHT_BRACE") && !this.isAtEnd()) {
+      methods.push(this.funDeclaration("method"))
+    }
+
+    this.consume("RIGHT_BRACE", "Expected } after class body.")
+
+    return new Class(token, methods)
+  }
+
+  varDeclaration(): Var {
     const name = this.consume("IDENTIFIER", "Expected variable name.")
 
     const initializer = this.match("EQUAL") ? this.expression() : undefined
@@ -87,7 +104,7 @@ export class Parser {
     return new Var(name, initializer)
   }
 
-  funDeclaration(kind: "function" | "method"): Stmt {
+  funDeclaration(kind: "function" | "method"): Fun {
     const name = this.consume("IDENTIFIER", `Expected ${kind} name.`)
 
     this.consume("LEFT_PAREN", `Expected ( after ${kind} name.`)

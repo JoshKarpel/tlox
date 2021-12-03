@@ -3,6 +3,7 @@ import {
   Binary,
   Block,
   Call,
+  Class,
   Expr,
   Expression,
   ExpressionVisitor,
@@ -141,6 +142,11 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
     }
 
     this.resolveLocal(expr, expr.name)
+  }
+
+  visitClassStmt(stmt: Class): void {
+    this.declare(stmt.name)
+    this.define(stmt.name)
   }
 
   visitAssign(expr: Assign): void {

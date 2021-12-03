@@ -113,6 +113,18 @@ describe("integration", () => {
       `,
       "nil\n",
     ],
+    [
+      `
+      class Bagel {
+        eat() {
+          print "yum";
+        }
+      }
+
+      var bagel = Bagel();
+      `,
+      "",
+    ],
   ]
   for (const [source, output] of cases) {
     test(`Running ${source}\noutputs\n${JSON.stringify(output)}`, () => {

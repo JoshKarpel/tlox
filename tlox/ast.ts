@@ -136,6 +136,7 @@ export interface StatementVisitor<T> {
   visitVarStmt(stmt: Var): T
   visitFunStmt(stmt: Fun): T
   visitBlockStmt(stmt: Block): T
+  visitClassStmt(stmt: Class): T
   visitIfStmt(stmt: If): T
   visitWhileStmt(stmt: While): T
 }
@@ -221,6 +222,20 @@ export class Block implements Stmt {
 
   accept<T>(visitor: StatementVisitor<T>): T {
     return visitor.visitBlockStmt(this)
+  }
+}
+
+export class Class implements Stmt {
+  name: Token
+  methods: Array<Fun>
+
+  constructor(name: Token, methods: Array<Fun>) {
+    this.name = name
+    this.methods = methods
+  }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitClassStmt(this)
   }
 }
 
