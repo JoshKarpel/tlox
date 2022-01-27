@@ -10,6 +10,7 @@ export interface ExpressionVisitor<T> {
   visitLogical(expr: Logical): T
   visitCall(expr: Call): T
   visitGet(expr: Get): T
+  visitSet(expr: SetExpr): T
 }
 
 export interface Expr {
@@ -134,13 +135,29 @@ export class Get implements Expr {
   object: Expr
   name: Token
 
-  constructor(callee: Expr, paren: Token) {
-    this.object = callee
+  constructor(object: Expr, paren: Token) {
+    this.object = object
     this.name = paren
   }
 
   accept<T>(visitor: ExpressionVisitor<T>): T {
     return visitor.visitGet(this)
+  }
+}
+
+export class SetExpr implements Expr {
+  object: Expr
+  name: Token
+  value: Expr
+
+  constructor(object: Expr, paren: Token, value: Expr) {
+    this.object = object
+    this.name = paren
+    this.value = value
+  }
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitSet(this)
   }
 }
 

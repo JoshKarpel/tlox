@@ -16,6 +16,7 @@ import {
   Logical,
   Print,
   Return,
+  SetExpr,
   Stmt,
   Unary,
   Var,
@@ -250,6 +251,8 @@ export class Parser {
       if (expr instanceof Variable) {
         const name = expr.name
         return new Assign(name, value)
+      } else if (expr instanceof Get) {
+        return new SetExpr(expr.object, expr.name, value)
       } else {
         throw this.error(equals, `Invalid assignment target ${JSON.stringify(expr)}`)
       }

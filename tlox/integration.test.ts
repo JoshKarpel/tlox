@@ -122,8 +122,11 @@ describe("integration", () => {
       }
 
       var bagel = Bagel();
+
+      bagel.foo = 5;
+      print bagel.foo;
       `,
-      "",
+      "5\n",
     ],
   ]
   for (const [source, output] of cases) {

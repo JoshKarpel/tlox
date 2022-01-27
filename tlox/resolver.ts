@@ -15,6 +15,7 @@ import {
   Logical,
   Print,
   Return,
+  SetExpr,
   StatementVisitor,
   Stmt,
   Unary,
@@ -203,6 +204,11 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
 
   visitGet(expr: Get): void {
     this.resolve(expr.object)
+  }
+
+  visitSet(expr: SetExpr): void {
+    this.resolve(expr.object)
+    this.resolve(expr.value)
   }
 
   visitGrouping(expr: Grouping): void {

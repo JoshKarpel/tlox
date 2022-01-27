@@ -15,6 +15,7 @@ import {
   Logical,
   Print,
   Return,
+  SetExpr,
   StatementVisitor,
   Stmt,
   Unary,
@@ -74,6 +75,10 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
 
   visitGet(expr: Get): string {
     return this.parenthesize(`get ${expr.name}`, expr.object)
+  }
+
+  visitSet(expr: SetExpr): string {
+    return this.parenthesize(`set ${expr.name}`, expr.object)
   }
 
   visitPrintStmt(stmt: Print): string {

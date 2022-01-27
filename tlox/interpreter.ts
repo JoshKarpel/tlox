@@ -19,6 +19,7 @@ import {
   Logical,
   Print,
   Return,
+  SetExpr,
   StatementVisitor,
   Stmt,
   Unary,
@@ -122,6 +123,10 @@ export class LoxInstance {
         message: `Undefined property ${name.lexeme} on ${this}`,
       })
     }
+  }
+
+  set(name: Token, value: LoxObject): void {
+    this.fields.set(name.lexeme, value)
   }
 }
 
@@ -370,6 +375,17 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
 
     if (object instanceof LoxInstance) {
       return object.get(expr.name)
+    } else {
+      throw new LoxRuntimeError({ token: expr.name, message: "Only instances have properties." })
+    }
+  }
+
+  visitSet(expr: SetExpr): LoxObject {
+    const object = this.evaluate(expr.object)
+    if (object instanceof LoxInstance) {
+      const value = this.evaluate(expr.value)
+      object.set(expr.name, value)
+      return value
     } else {
       throw new LoxRuntimeError({ token: expr.name, message: "Only instances have properties." })
     }
