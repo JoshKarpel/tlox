@@ -28,7 +28,7 @@ import { LoxParseError } from "./parser"
 import { Token } from "./scanner"
 
 type Scope = Map<string, boolean>
-type FunctionType = "none" | "function"
+type FunctionType = "none" | "function" | "method"
 
 export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> {
   interpreter: Interpreter
@@ -149,6 +149,11 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
   visitClassStmt(stmt: Class): void {
     this.declare(stmt.name)
     this.define(stmt.name)
+
+    for (const method of stmt.methods) {
+      const declaration = "method"
+      this.resolveFunction(method, declaration)
+    }
   }
 
   visitAssign(expr: Assign): void {

@@ -89,9 +89,11 @@ class LoxFunction implements LoxCallable {
 
 export class LoxClass implements LoxCallable {
   name: string
+  methods: Map<string, LoxFunction>
 
-  constructor(name: string) {
+  constructor(name: string, methods: Map<string, LoxFunction>) {
     this.name = name
+    this.methods = methods
   }
 
   arity(): number {
@@ -100,6 +102,10 @@ export class LoxClass implements LoxCallable {
 
   call(_interpreter: Interpreter, _args: Array<LoxObject>): LoxObject {
     return new LoxInstance(this)
+  }
+
+  findMethod(name: string): LoxFunction | undefined {
+    return this.methods.get(name)
   }
 }
 
@@ -115,14 +121,20 @@ export class LoxInstance {
   get(name: Token): LoxObject {
     const r = this.fields.get(name.lexeme)
 
-    if (r !== undefined) {
-      return r
-    } else {
+    if (r === undefined) {
+      const method = this.cls.findMethod(name.lexeme)
+
+      if (method !== undefined) {
+        return method
+      }
+
       throw new LoxRuntimeError({
         token: name,
         message: `Undefined property ${name.lexeme} on ${this}`,
       })
     }
+
+    return r
   }
 
   set(name: Token, value: LoxObject): void {
@@ -422,7 +434,12 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
 
   visitClassStmt(stmt: Class): void {
     this.environment.define(stmt.name.lexeme, null)
-    const cls = new LoxClass(stmt.name.lexeme)
+    const methods = new Map()
+    for (const method of stmt.methods) {
+      const func = new LoxFunction(method, this.environment)
+      methods.set(method.name.lexeme, func)
+    }
+    const cls = new LoxClass(stmt.name.lexeme, methods)
     this.environment.assign(stmt.name, cls)
   }
 

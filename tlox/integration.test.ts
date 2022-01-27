@@ -125,8 +125,10 @@ describe("integration", () => {
 
       bagel.foo = 5;
       print bagel.foo;
+
+      bagel.eat();
       `,
-      "5\n",
+      "5\nyum\n",
     ],
   ]
   for (const [source, output] of cases) {
