@@ -8,6 +8,7 @@ import {
   Expression,
   ExpressionVisitor,
   Fun,
+  Get,
   Grouping,
   If,
   Literal,
@@ -69,6 +70,10 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
 
   visitCall(expr: Call): string {
     return this.parenthesize("call", expr.callee)
+  }
+
+  visitGet(expr: Get): string {
+    return this.parenthesize(`get ${expr.name}`, expr.object)
   }
 
   visitPrintStmt(stmt: Print): string {

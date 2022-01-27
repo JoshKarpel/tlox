@@ -9,6 +9,7 @@ import {
   Expr,
   Expression,
   Fun,
+  Get,
   Grouping,
   If,
   Literal,
@@ -345,6 +346,9 @@ export class Parser {
     while (true) {
       if (this.match("LEFT_PAREN")) {
         expr = this.finishCall(expr)
+      } else if (this.match("DOT")) {
+        const name = this.consume("IDENTIFIER", "expected property name after .")
+        expr = new Get(expr, name)
       } else {
         break
       }

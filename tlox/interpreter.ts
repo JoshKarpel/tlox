@@ -11,6 +11,7 @@ import {
   Expression,
   ExpressionVisitor,
   Fun,
+  Get,
   Grouping,
   If,
   Literal,
@@ -103,9 +104,24 @@ export class LoxClass implements LoxCallable {
 
 export class LoxInstance {
   cls: LoxClass
+  fields: Map<string, LoxObject>
 
   constructor(cls: LoxClass) {
     this.cls = cls
+    this.fields = new Map()
+  }
+
+  get(name: Token): LoxObject {
+    const r = this.fields.get(name.lexeme)
+
+    if (r !== undefined) {
+      return r
+    } else {
+      throw new LoxRuntimeError({
+        token: name,
+        message: `Undefined property ${name.lexeme} on ${this}`,
+      })
+    }
   }
 }
 
@@ -347,6 +363,16 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
     }
 
     return callee.call(this, args)
+  }
+
+  visitGet(expr: Get): LoxObject {
+    const object = this.evaluate(expr.object)
+
+    if (object instanceof LoxInstance) {
+      return object.get(expr.name)
+    } else {
+      throw new LoxRuntimeError({ token: expr.name, message: "Only instances have properties." })
+    }
   }
 
   visitExpressionStmt(stmt: Expression): void {

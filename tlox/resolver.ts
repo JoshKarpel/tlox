@@ -8,6 +8,7 @@ import {
   Expression,
   ExpressionVisitor,
   Fun,
+  Get,
   Grouping,
   If,
   Literal,
@@ -198,6 +199,10 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
     for (const arg of expr.args) {
       this.resolve(arg)
     }
+  }
+
+  visitGet(expr: Get): void {
+    this.resolve(expr.object)
   }
 
   visitGrouping(expr: Grouping): void {
