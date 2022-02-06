@@ -119,16 +119,21 @@ describe("integration", () => {
         eat() {
           print "yum";
         }
+
+        print_foo() {
+          print this.foo;
+        }
       }
 
       var bagel = Bagel();
 
       bagel.foo = 5;
       print bagel.foo;
+      bagel.print_foo();
 
       bagel.eat();
       `,
-      "5\nyum\n",
+      "5\n5\nyum\n",
     ],
   ]
   for (const [source, output] of cases) {

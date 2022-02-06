@@ -18,6 +18,7 @@ import {
   Return,
   SetExpr,
   Stmt,
+  This,
   Unary,
   Var,
   Variable,
@@ -393,6 +394,8 @@ export class Parser {
       } else {
         throw this.error(t, "Expected a number or string.")
       }
+    } else if (this.match("THIS")) {
+      return new This(this.previous())
     } else if (this.match("IDENTIFIER")) {
       return new Variable(this.previous())
     } else if (this.match("LEFT_PAREN")) {

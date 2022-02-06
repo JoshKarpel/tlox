@@ -18,6 +18,7 @@ import {
   SetExpr,
   StatementVisitor,
   Stmt,
+  This,
   Unary,
   Var,
   Variable,
@@ -59,6 +60,10 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
 
   visitUnary(expr: Unary): string {
     return this.parenthesize(expr.operator.lexeme, expr.right)
+  }
+
+  visitThis(expr: This): string {
+    return expr.keyword.lexeme
   }
 
   visitVariable(expr: Variable): string {

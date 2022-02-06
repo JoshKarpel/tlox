@@ -22,6 +22,7 @@ import {
   SetExpr,
   StatementVisitor,
   Stmt,
+  This,
   Unary,
   Var,
   Variable,
@@ -85,6 +86,12 @@ class LoxFunction implements LoxCallable {
 
     return null
   }
+
+  bind(instance: LoxInstance): LoxFunction {
+    const environment = new Environment(this.closure)
+    environment.define("this", instance)
+    return new LoxFunction(this.declaration, environment)
+  }
 }
 
 export class LoxClass implements LoxCallable {
@@ -125,7 +132,7 @@ export class LoxInstance {
       const method = this.cls.findMethod(name.lexeme)
 
       if (method !== undefined) {
-        return method
+        return method.bind(this)
       }
 
       throw new LoxRuntimeError({
@@ -341,6 +348,10 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
           message: `cannot apply operator ${expr.operator.lexeme} as unary to ${right}`,
         })
     }
+  }
+
+  visitThis(expr: This): LoxObject {
+    return this.lookupVariable(expr.keyword, expr)
   }
 
   visitVariable(expr: Variable): LoxObject {

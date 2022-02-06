@@ -18,28 +18,32 @@ import {
   SetExpr,
   StatementVisitor,
   Stmt,
+  This,
   Unary,
   Var,
   Variable,
   While,
 } from "./ast"
-import { Interpreter } from "./interpreter"
+import { Interpreter, LoxRuntimeError } from "./interpreter"
 import { LoxParseError } from "./parser"
 import { Token } from "./scanner"
 
 type Scope = Map<string, boolean>
 type FunctionType = "none" | "function" | "method"
+type ClassType = "none" | "class"
 
 export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> {
   interpreter: Interpreter
   scopes: Array<Scope>
   currentFunctionType: FunctionType
+  currentClassType: ClassType
 
   constructor(interpreter: Interpreter) {
     this.interpreter = interpreter
 
     this.scopes = []
     this.currentFunctionType = "none"
+    this.currentClassType = "none"
   }
 
   currentScope(): Scope | undefined {
@@ -147,13 +151,23 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
   }
 
   visitClassStmt(stmt: Class): void {
+    const enclosingClass = this.currentClassType
+    this.currentClassType = "class"
+
     this.declare(stmt.name)
     this.define(stmt.name)
+
+    this.beginScope()
+    this.currentScope()?.set("this", true)
 
     for (const method of stmt.methods) {
       const declaration = "method"
       this.resolveFunction(method, declaration)
     }
+
+    this.endScope()
+
+    this.currentClassType = enclosingClass
   }
 
   visitAssign(expr: Assign): void {
@@ -229,5 +243,15 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
 
   visitUnary(expr: Unary): void {
     this.resolve(expr.right)
+  }
+
+  visitThis(expr: This): void {
+    if (this.currentClassType == "none") {
+      throw new LoxRuntimeError({
+        token: expr.keyword,
+        message: "Cannot use this outside of a class.",
+      })
+    }
+    this.resolveLocal(expr, expr.keyword)
   }
 }

@@ -6,6 +6,7 @@ export interface ExpressionVisitor<T> {
   visitGrouping(expr: Grouping): T
   visitLiteral(expr: Literal): T
   visitUnary(expr: Unary): T
+  visitThis(expr: This): T
   visitVariable(expr: Variable): T
   visitLogical(expr: Logical): T
   visitCall(expr: Call): T
@@ -84,6 +85,18 @@ export class Unary implements Expr {
 
   accept<T>(visitor: ExpressionVisitor<T>): T {
     return visitor.visitUnary(this)
+  }
+}
+
+export class This implements Expr {
+  keyword: Token
+
+  constructor(keyword: Token) {
+    this.keyword = keyword
+  }
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitThis(this)
   }
 }
 
