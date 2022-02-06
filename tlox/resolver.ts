@@ -3,18 +3,22 @@ import {
   Binary,
   Block,
   Call,
+  Class,
   Expr,
   Expression,
   ExpressionVisitor,
   Fun,
+  Get,
   Grouping,
   If,
   Literal,
   Logical,
   Print,
   Return,
+  SetExpr,
   StatementVisitor,
   Stmt,
+  This,
   Unary,
   Var,
   Variable,
@@ -25,18 +29,21 @@ import { LoxParseError } from "./parser"
 import { Token } from "./scanner"
 
 type Scope = Map<string, boolean>
-type FunctionType = "none" | "function"
+type FunctionType = "none" | "function" | "method" | "initializer"
+type ClassType = "none" | "class"
 
 export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> {
   interpreter: Interpreter
   scopes: Array<Scope>
   currentFunctionType: FunctionType
+  currentClassType: ClassType
 
   constructor(interpreter: Interpreter) {
     this.interpreter = interpreter
 
     this.scopes = []
     this.currentFunctionType = "none"
+    this.currentClassType = "none"
   }
 
   currentScope(): Scope | undefined {
@@ -143,6 +150,26 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
     this.resolveLocal(expr, expr.name)
   }
 
+  visitClassStmt(stmt: Class): void {
+    const enclosingClass = this.currentClassType
+    this.currentClassType = "class"
+
+    this.declare(stmt.name)
+    this.define(stmt.name)
+
+    this.beginScope()
+    this.currentScope()?.set("this", true)
+
+    for (const method of stmt.methods) {
+      const declaration = method.name.lexeme == "init" ? "initializer" : "method"
+      this.resolveFunction(method, declaration)
+    }
+
+    this.endScope()
+
+    this.currentClassType = enclosingClass
+  }
+
   visitAssign(expr: Assign): void {
     this.resolve(expr.value)
     this.resolveLocal(expr, expr.name)
@@ -173,6 +200,8 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
   visitReturnStmt(stmt: Return): void {
     if (this.currentFunctionType === "none") {
       throw new LoxParseError(stmt.keyword, "Can't return at global scope.")
+    } else if (this.currentFunctionType == "initializer") {
+      throw new LoxParseError(stmt.keyword, "Can't return from an initializer.")
     }
     this.resolve(stmt.expression)
   }
@@ -194,6 +223,15 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
     }
   }
 
+  visitGet(expr: Get): void {
+    this.resolve(expr.object)
+  }
+
+  visitSet(expr: SetExpr): void {
+    this.resolve(expr.object)
+    this.resolve(expr.value)
+  }
+
   visitGrouping(expr: Grouping): void {
     this.resolve(expr.expression)
   }
@@ -207,5 +245,12 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
 
   visitUnary(expr: Unary): void {
     this.resolve(expr.right)
+  }
+
+  visitThis(expr: This): void {
+    if (this.currentClassType == "none") {
+      throw new LoxParseError(expr.keyword, "Cannot use this outside of a class.")
+    }
+    this.resolveLocal(expr, expr.keyword)
   }
 }

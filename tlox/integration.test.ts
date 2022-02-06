@@ -113,6 +113,26 @@ describe("integration", () => {
       `,
       "nil\n",
     ],
+    [
+      `
+      class Bagel {
+        init(topping) {
+          this.topping = topping;
+        }
+
+        eat() {
+          print "yum " + this.topping;
+        }
+      }
+
+      var bagel = Bagel("cream cheese");
+      bagel.eat();
+
+      bagel.topping = "grapes";
+      bagel.eat();
+      `,
+      "yum cream cheese\nyum grapes\n",
+    ],
   ]
   for (const [source, output] of cases) {
     test(`Running ${source}\noutputs\n${JSON.stringify(output)}`, () => {

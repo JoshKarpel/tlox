@@ -3,18 +3,22 @@ import {
   Binary,
   Block,
   Call,
+  Class,
   Expr,
   Expression,
   ExpressionVisitor,
   Fun,
+  Get,
   Grouping,
   If,
   Literal,
   Logical,
   Print,
   Return,
+  SetExpr,
   StatementVisitor,
   Stmt,
+  This,
   Unary,
   Var,
   Variable,
@@ -58,6 +62,10 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
     return this.parenthesize(expr.operator.lexeme, expr.right)
   }
 
+  visitThis(expr: This): string {
+    return expr.keyword.lexeme
+  }
+
   visitVariable(expr: Variable): string {
     return expr.name.lexeme
   }
@@ -70,12 +78,24 @@ export class AstPrinter implements ExpressionVisitor<string>, StatementVisitor<s
     return this.parenthesize("call", expr.callee)
   }
 
+  visitGet(expr: Get): string {
+    return this.parenthesize(`get ${expr.name}`, expr.object)
+  }
+
+  visitSet(expr: SetExpr): string {
+    return this.parenthesize(`set ${expr.name}`, expr.object)
+  }
+
   visitPrintStmt(stmt: Print): string {
     return this.parenthesize("print", stmt.expression)
   }
 
   visitReturnStmt(stmt: Return): string {
     return this.parenthesize("return", stmt.expression)
+  }
+
+  visitClassStmt(stmt: Class): string {
+    return this.parenthesize(`class ${stmt.name.lexeme}`, ...stmt.methods)
   }
 
   visitExpressionStmt(stmt: Expression): string {

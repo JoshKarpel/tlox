@@ -6,9 +6,12 @@ export interface ExpressionVisitor<T> {
   visitGrouping(expr: Grouping): T
   visitLiteral(expr: Literal): T
   visitUnary(expr: Unary): T
+  visitThis(expr: This): T
   visitVariable(expr: Variable): T
   visitLogical(expr: Logical): T
   visitCall(expr: Call): T
+  visitGet(expr: Get): T
+  visitSet(expr: SetExpr): T
 }
 
 export interface Expr {
@@ -85,6 +88,18 @@ export class Unary implements Expr {
   }
 }
 
+export class This implements Expr {
+  keyword: Token
+
+  constructor(keyword: Token) {
+    this.keyword = keyword
+  }
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitThis(this)
+  }
+}
+
 export class Variable implements Expr {
   name: Token
 
@@ -129,6 +144,36 @@ export class Call implements Expr {
   }
 }
 
+export class Get implements Expr {
+  object: Expr
+  name: Token
+
+  constructor(object: Expr, paren: Token) {
+    this.object = object
+    this.name = paren
+  }
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitGet(this)
+  }
+}
+
+export class SetExpr implements Expr {
+  object: Expr
+  name: Token
+  value: Expr
+
+  constructor(object: Expr, paren: Token, value: Expr) {
+    this.object = object
+    this.name = paren
+    this.value = value
+  }
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitSet(this)
+  }
+}
+
 export interface StatementVisitor<T> {
   visitExpressionStmt(stmt: Expression): T
   visitPrintStmt(stmt: Print): T
@@ -136,6 +181,7 @@ export interface StatementVisitor<T> {
   visitVarStmt(stmt: Var): T
   visitFunStmt(stmt: Fun): T
   visitBlockStmt(stmt: Block): T
+  visitClassStmt(stmt: Class): T
   visitIfStmt(stmt: If): T
   visitWhileStmt(stmt: While): T
 }
@@ -221,6 +267,20 @@ export class Block implements Stmt {
 
   accept<T>(visitor: StatementVisitor<T>): T {
     return visitor.visitBlockStmt(this)
+  }
+}
+
+export class Class implements Stmt {
+  name: Token
+  methods: Array<Fun>
+
+  constructor(name: Token, methods: Array<Fun>) {
+    this.name = name
+    this.methods = methods
+  }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitClassStmt(this)
   }
 }
 
