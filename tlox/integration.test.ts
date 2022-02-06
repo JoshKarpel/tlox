@@ -116,24 +116,22 @@ describe("integration", () => {
     [
       `
       class Bagel {
-        eat() {
-          print "yum";
+        init(topping) {
+          this.topping = topping;
         }
 
-        print_foo() {
-          print this.foo;
+        eat() {
+          print "yum " + this.topping;
         }
       }
 
-      var bagel = Bagel();
+      var bagel = Bagel("cream cheese");
+      bagel.eat();
 
-      bagel.foo = 5;
-      print bagel.foo;
-      bagel.print_foo();
-
+      bagel.topping = "grapes";
       bagel.eat();
       `,
-      "5\n5\nyum\n",
+      "yum cream cheese\nyum grapes\n",
     ],
   ]
   for (const [source, output] of cases) {

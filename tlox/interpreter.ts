@@ -57,10 +57,12 @@ class ReturnValue extends Error {
 class LoxFunction implements LoxCallable {
   declaration: Fun
   closure: Environment
+  isInitializer: boolean
 
-  constructor(declaration: Fun, closure: Environment) {
+  constructor(declaration: Fun, closure: Environment, isInitializer: boolean) {
     this.declaration = declaration
     this.closure = closure
+    this.isInitializer = isInitializer
   }
 
   arity(): number {
@@ -77,20 +79,26 @@ class LoxFunction implements LoxCallable {
     try {
       interpreter.interpret(this.declaration.body, environment)
     } catch (e: unknown) {
-      if (e instanceof ReturnValue) {
+      if (this.isInitializer) {
+        return this.closure.getAt(0, { lexeme: "this", type: "THIS", line: 0 })
+      } else if (e instanceof ReturnValue) {
         return e.value
       } else {
         throw e
       }
     }
 
-    return null
+    if (this.isInitializer) {
+      return this.closure.getAt(0, { lexeme: "this", type: "THIS", line: 0 })
+    } else {
+      return null
+    }
   }
 
   bind(instance: LoxInstance): LoxFunction {
     const environment = new Environment(this.closure)
     environment.define("this", instance)
-    return new LoxFunction(this.declaration, environment)
+    return new LoxFunction(this.declaration, environment, this.isInitializer)
   }
 }
 
@@ -104,15 +112,30 @@ export class LoxClass implements LoxCallable {
   }
 
   arity(): number {
+    const init = this.initMethod()
+    if (init !== undefined) {
+      return init.arity()
+    }
     return 0
   }
 
-  call(_interpreter: Interpreter, _args: Array<LoxObject>): LoxObject {
-    return new LoxInstance(this)
+  call(interpreter: Interpreter, args: Array<LoxObject>): LoxObject {
+    const instance = new LoxInstance(this)
+
+    const init = this.initMethod()
+    if (init !== undefined) {
+      init.bind(instance).call(interpreter, args)
+    }
+
+    return instance
   }
 
   findMethod(name: string): LoxFunction | undefined {
     return this.methods.get(name)
+  }
+
+  initMethod(): ReturnType<LoxClass["findMethod"]> {
+    return this.findMethod("init")
   }
 }
 
@@ -436,7 +459,7 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
   }
 
   visitFunStmt(stmt: Fun): void {
-    this.environment.define(stmt.name.lexeme, new LoxFunction(stmt, this.environment))
+    this.environment.define(stmt.name.lexeme, new LoxFunction(stmt, this.environment, false))
   }
 
   visitBlockStmt(stmt: Block): void {
@@ -447,7 +470,7 @@ export class Interpreter implements ExpressionVisitor<LoxObject>, StatementVisit
     this.environment.define(stmt.name.lexeme, null)
     const methods = new Map()
     for (const method of stmt.methods) {
-      const func = new LoxFunction(method, this.environment)
+      const func = new LoxFunction(method, this.environment, method.name.lexeme == "init")
       methods.set(method.name.lexeme, func)
     }
     const cls = new LoxClass(stmt.name.lexeme, methods)

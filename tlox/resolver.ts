@@ -24,12 +24,12 @@ import {
   Variable,
   While,
 } from "./ast"
-import { Interpreter, LoxRuntimeError } from "./interpreter"
+import { Interpreter } from "./interpreter"
 import { LoxParseError } from "./parser"
 import { Token } from "./scanner"
 
 type Scope = Map<string, boolean>
-type FunctionType = "none" | "function" | "method"
+type FunctionType = "none" | "function" | "method" | "initializer"
 type ClassType = "none" | "class"
 
 export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> {
@@ -161,7 +161,7 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
     this.currentScope()?.set("this", true)
 
     for (const method of stmt.methods) {
-      const declaration = "method"
+      const declaration = method.name.lexeme == "init" ? "initializer" : "method"
       this.resolveFunction(method, declaration)
     }
 
@@ -200,6 +200,8 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
   visitReturnStmt(stmt: Return): void {
     if (this.currentFunctionType === "none") {
       throw new LoxParseError(stmt.keyword, "Can't return at global scope.")
+    } else if (this.currentFunctionType == "initializer") {
+      throw new LoxParseError(stmt.keyword, "Can't return from an initializer.")
     }
     this.resolve(stmt.expression)
   }
@@ -247,10 +249,7 @@ export class Resolver implements ExpressionVisitor<void>, StatementVisitor<void>
 
   visitThis(expr: This): void {
     if (this.currentClassType == "none") {
-      throw new LoxRuntimeError({
-        token: expr.keyword,
-        message: "Cannot use this outside of a class.",
-      })
+      throw new LoxParseError(expr.keyword, "Cannot use this outside of a class.")
     }
     this.resolveLocal(expr, expr.keyword)
   }
