@@ -28,6 +28,6 @@ jobs:
       - name: Run tests
         run: yarn test --coverage --coverageDirectory .coverage/
       - name: Upload coverage stats
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: .coverage/
