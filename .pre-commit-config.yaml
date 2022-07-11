@@ -14,7 +14,7 @@ repos:
       - id: detect-private-key
       - id: check-vcs-permalinks
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.2.0
+    rev: v1.3.0
     hooks:
       - id: remove-crlf
   - repo: https://github.com/pre-commit/mirrors-prettier
