@@ -3,7 +3,7 @@
   "dependencies": {
     "@types/node": ">=18.11.10",
     "chalk": "<5.0.0",
-    "oclif": ">=3.2.2",
+    "oclif": ">=3.4.2",
     "typescript": ">=4.9.4",
     "yargs": ">=17.6.2"
   },
